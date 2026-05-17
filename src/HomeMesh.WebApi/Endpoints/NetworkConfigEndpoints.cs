@@ -38,7 +38,12 @@ public static class NetworkConfigEndpoints
             CancellationToken cancellationToken) =>
         {
             var deleted = await routeService.DeleteAsync(networkId, routeId, cancellationToken);
-            return deleted ? Results.NoContent() : Results.NotFound(new { error = "Route not found." });
+            if (!deleted)
+            {
+                return Results.NotFound(new { error = "Route not found." });
+            }
+
+            return Results.NoContent();
         });
 
         app.MapGet("/api/networks/{networkId}/ip-pools", async (
@@ -73,7 +78,12 @@ public static class NetworkConfigEndpoints
             CancellationToken cancellationToken) =>
         {
             var deleted = await ipPoolService.DeleteAsync(networkId, poolId, cancellationToken);
-            return deleted ? Results.NoContent() : Results.NotFound(new { error = "IP pool not found." });
+            if (!deleted)
+            {
+                return Results.NotFound(new { error = "IP pool not found." });
+            }
+
+            return Results.NoContent();
         });
 
         app.MapGet("/api/networks/{networkId}/dns", async (
@@ -82,7 +92,12 @@ public static class NetworkConfigEndpoints
             CancellationToken cancellationToken) =>
         {
             var config = await dnsConfigService.GetAsync(networkId, cancellationToken);
-            return config is null ? Results.NotFound(new { error = "DNS config not found." }) : Results.Ok(config);
+            if (config is null)
+            {
+                return Results.NotFound(new { error = "DNS config not found." });
+            }
+
+            return Results.Ok(config);
         });
 
         app.MapPut("/api/networks/{networkId}/dns", async (
