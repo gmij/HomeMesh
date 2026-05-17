@@ -1,9 +1,10 @@
 using HomeMesh.Abstractions.Providers;
-using HomeMesh.Application.Networks;
+using HomeMesh.Application;
 using HomeMesh.Application.Setup;
 using HomeMesh.Infrastructure;
 using HomeMesh.Infrastructure.Persistence;
 using HomeMesh.Protocol.ZeroTier;
+using HomeMesh.WebApi.Endpoints;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
@@ -21,8 +22,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHomeMeshInfrastructure(builder.Configuration);
 builder.Services.AddZeroTierProvider(builder.Configuration);
-builder.Services.AddScoped<SetupService>();
-builder.Services.AddScoped<NetworkService>();
+builder.Services.AddHomeMeshApplication();
 
 var app = builder.Build();
 
@@ -88,28 +88,9 @@ app.MapGet("/api/providers/{providerName}/status", async (string providerName, I
     return Results.Ok(await provider.GetStatusAsync(cancellationToken));
 });
 
-app.MapGet("/api/networks", async (NetworkService networkService, CancellationToken cancellationToken) =>
-{
-    return Results.Ok(await networkService.ListAsync(cancellationToken));
-});
-
-app.MapPost("/api/networks", async (CreateNetworkRequest request, NetworkService networkService, CancellationToken cancellationToken) =>
-{
-    if (string.IsNullOrWhiteSpace(request.Name))
-    {
-        return Results.BadRequest(new { error = "Network name is required." });
-    }
-
-    try
-    {
-        var network = await networkService.CreateAsync(request, cancellationToken);
-        return Results.Created($"/api/networks/{network.Id}", network);
-    }
-    catch (InvalidOperationException ex)
-    {
-        return Results.BadRequest(new { error = ex.Message });
-    }
-});
+app.MapNetworkEndpoints();
+app.MapNetworkConfigEndpoints();
+app.MapMemberEndpoints();
 
 app.MapGet("/api/audit-logs", async (HomeMeshDbContext db, CancellationToken cancellationToken) =>
 {
