@@ -1,0 +1,18 @@
+services:
+  homemesh-controller:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    container_name: homemesh-controller
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - homemesh-data:/app/data
+      # If ZeroTier One runs on the host, mount the auth token as read-only.
+      # - /var/lib/zerotier-one/authtoken.secret:/var/lib/zerotier-one/authtoken.secret:ro
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+
+volumes:
+  homemesh-data:
