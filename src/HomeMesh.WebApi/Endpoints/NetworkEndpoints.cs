@@ -32,17 +32,23 @@ public static class NetworkEndpoints
         app.MapGet("/api/networks/{networkId}", async (string networkId, NetworkService networkService, CancellationToken cancellationToken) =>
         {
             var network = await networkService.GetAsync(networkId, cancellationToken);
-            return network is null
-                ? Results.NotFound(new { error = "Network not found." })
-                : Results.Ok(network);
+            if (network is null)
+            {
+                return Results.NotFound(new { error = "Network not found." });
+            }
+
+            return Results.Ok(network);
         });
 
         app.MapDelete("/api/networks/{networkId}", async (string networkId, NetworkService networkService, CancellationToken cancellationToken) =>
         {
             var deleted = await networkService.DeleteAsync(networkId, cancellationToken);
-            return deleted
-                ? Results.NoContent()
-                : Results.NotFound(new { error = "Network not found." });
+            if (!deleted)
+            {
+                return Results.NotFound(new { error = "Network not found." });
+            }
+
+            return Results.NoContent();
         });
 
         return app;
