@@ -57,9 +57,11 @@ public sealed class ZeroTierControllerProvider(
 
         if (request.Cidr is not null || request.Private != network.Private)
         {
-            var routes = request.Cidr is null
-                ? network.Routes
-                : [.. network.Routes, new ZeroTierRoute { Target = request.Cidr }];
+            var routes = new List<ZeroTierRoute>(network.Routes);
+            if (request.Cidr is not null)
+            {
+                routes.Add(new ZeroTierRoute { Target = request.Cidr });
+            }
 
             network = await client.UpdateNetworkAsync(network.Nwid!, new
             {
