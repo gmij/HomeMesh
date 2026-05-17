@@ -1,4 +1,5 @@
 using HomeMesh.Abstractions.Providers;
+using HomeMesh.Application.Networks;
 using HomeMesh.Application.Setup;
 using HomeMesh.Infrastructure;
 using HomeMesh.Infrastructure.Persistence;
@@ -21,6 +22,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddHomeMeshInfrastructure(builder.Configuration);
 builder.Services.AddZeroTierProvider(builder.Configuration);
 builder.Services.AddScoped<SetupService>();
+builder.Services.AddScoped<NetworkService>();
 
 var app = builder.Build();
 
@@ -86,25 +88,27 @@ app.MapGet("/api/providers/{providerName}/status", async (string providerName, I
     return Results.Ok(await provider.GetStatusAsync(cancellationToken));
 });
 
-app.MapGet("/api/networks", async (HomeMeshDbContext db, CancellationToken cancellationToken) =>
+app.MapGet("/api/networks", async (NetworkService networkService, CancellationToken cancellationToken) =>
 {
-    var networks = await db.Networks
-        .OrderBy(x => x.Name)
-        .Select(x => new
-        {
-            x.Id,
-            x.HomeId,
-            x.Name,
-            x.Cidr,
-            x.Private,
-            x.V4AssignMode,
-            x.Status,
-            x.CreatedAt,
-            x.UpdatedAt
-        })
-        .ToListAsync(cancellationToken);
+    return Results.Ok(await networkService.ListAsync(cancellationToken));
+});
 
-    return Results.Ok(networks);
+app.MapPost("/api/networks", async (CreateNetworkRequest request, NetworkService networkService, CancellationToken cancellationToken) =>
+{
+    if (string.IsNullOrWhiteSpace(request.Name))
+    {
+        return Results.BadRequest(new { error = "Network name is required." });
+    }
+
+    try
+    {
+        var network = await networkService.CreateAsync(request, cancellationToken);
+        return Results.Created($"/api/networks/{network.Id}", network);
+    }
+    catch (InvalidOperationException ex)
+    {
+        return Results.BadRequest(new { error = ex.Message });
+    }
 });
 
 app.MapGet("/api/audit-logs", async (HomeMeshDbContext db, CancellationToken cancellationToken) =>
