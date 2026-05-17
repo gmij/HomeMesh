@@ -1,4 +1,5 @@
 using System.Text.Json;
+using HomeMesh.Application.Setup;
 using HomeMesh.Domain.Entities;
 using HomeMesh.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -63,8 +64,8 @@ public sealed class DnsConfigService(HomeMeshDbContext db)
     private static DnsConfigDto ToDto(DnsConfig config)
     {
         var servers = string.IsNullOrWhiteSpace(config.ServersJson)
-            ? []
-            : JsonSerializer.Deserialize<string[]>(config.ServersJson) ?? [];
+            ? Array.Empty<string>()
+            : JsonSerializer.Deserialize<string[]>(config.ServersJson) ?? Array.Empty<string>();
 
         return new DnsConfigDto(
             config.Id,
