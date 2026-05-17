@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\HomeMesh.Abstractions\HomeMesh.Abstractions.csproj" />
+    <ProjectReference Include="..\HomeMesh.Domain\HomeMesh.Domain.csproj" />
+  </ItemGroup>
+</Project>
