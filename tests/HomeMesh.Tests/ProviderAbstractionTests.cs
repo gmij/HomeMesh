@@ -1,4 +1,3 @@
-using HomeMesh.Abstractions.Providers;
 using HomeMesh.Protocol.ZeroTier;
 using Microsoft.Extensions.Options;
 
@@ -7,17 +6,21 @@ namespace HomeMesh.Tests;
 public sealed class ProviderAbstractionTests
 {
     [Fact]
-    public async Task ZeroTierProvider_Should_Return_Configured_Status()
+    public async Task ZeroTierProvider_Should_Return_Disabled_Status_When_Disabled()
     {
-        var provider = new ZeroTierControllerProvider(Options.Create(new ZeroTierOptions
+        var options = Options.Create(new ZeroTierOptions
         {
-            Enabled = true,
+            Enabled = false,
             ApiBaseUrl = "http://127.0.0.1:9993"
-        }));
+        });
 
-        ProviderHealthStatus status = await provider.GetStatusAsync();
+        using var httpClient = new HttpClient();
+        var apiClient = new ZeroTierLocalApiClient(httpClient, options);
+        var provider = new ZeroTierControllerProvider(options, apiClient);
+
+        var status = await provider.GetStatusAsync();
 
         Assert.Equal("ZeroTier", status.ProviderName);
-        Assert.Equal("Configured", status.Status);
+        Assert.Equal("Disabled", status.Status);
     }
 }
