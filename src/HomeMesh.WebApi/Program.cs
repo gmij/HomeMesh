@@ -24,6 +24,12 @@ builder.Services.AddScoped<SetupService>();
 
 var app = builder.Build();
 
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<HomeMeshDbContext>();
+    await db.Database.EnsureCreatedAsync();
+}
+
 app.UseSwagger();
 app.UseSwaggerUI();
 
