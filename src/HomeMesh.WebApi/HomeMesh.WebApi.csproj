@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <ItemGroup>
+    <ProjectReference Include="..\HomeMesh.Abstractions\HomeMesh.Abstractions.csproj" />
+    <ProjectReference Include="..\HomeMesh.Application\HomeMesh.Application.csproj" />
+    <ProjectReference Include="..\HomeMesh.Infrastructure\HomeMesh.Infrastructure.csproj" />
+    <ProjectReference Include="..\HomeMesh.Protocol.ZeroTier\HomeMesh.Protocol.ZeroTier.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="10.0.0" />
+  </ItemGroup>
+</Project>
