@@ -1,3 +1,4 @@
+using HomeMesh.Application.Setup;
 using HomeMesh.Domain.Entities;
 using HomeMesh.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
