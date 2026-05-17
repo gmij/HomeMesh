@@ -3,6 +3,7 @@
     <ProjectReference Include="..\..\src\HomeMesh.Abstractions\HomeMesh.Abstractions.csproj" />
     <ProjectReference Include="..\..\src\HomeMesh.Domain\HomeMesh.Domain.csproj" />
     <ProjectReference Include="..\..\src\HomeMesh.Application\HomeMesh.Application.csproj" />
+    <ProjectReference Include="..\..\src\HomeMesh.Protocol.ZeroTier\HomeMesh.Protocol.ZeroTier.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.0" />
