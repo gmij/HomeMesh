@@ -1,5 +1,6 @@
 using HomeMesh.Protocol.ZeroTier;
 using Microsoft.Extensions.Options;
+using Xunit;
 
 namespace HomeMesh.Tests;
 
