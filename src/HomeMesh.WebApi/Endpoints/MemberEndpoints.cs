@@ -21,9 +21,12 @@ public static class MemberEndpoints
             CancellationToken cancellationToken) =>
         {
             var member = await memberService.GetAsync(networkId, memberId, cancellationToken);
-            return member is null
-                ? Results.NotFound(new { error = "Member not found." })
-                : Results.Ok(member);
+            if (member is null)
+            {
+                return Results.NotFound(new { error = "Member not found." });
+            }
+
+            return Results.Ok(member);
         });
 
         app.MapPatch("/api/networks/{networkId}/members/{memberId}", async (
@@ -95,9 +98,12 @@ public static class MemberEndpoints
             CancellationToken cancellationToken) =>
         {
             var deleted = await memberService.RemoveAsync(networkId, memberId, cancellationToken);
-            return deleted
-                ? Results.NoContent()
-                : Results.NotFound(new { error = "Member not found." });
+            if (!deleted)
+            {
+                return Results.NotFound(new { error = "Member not found." });
+            }
+
+            return Results.NoContent();
         });
 
         return app;
