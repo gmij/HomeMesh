@@ -2,5 +2,10 @@
   <ItemGroup>
     <ProjectReference Include="..\HomeMesh.Abstractions\HomeMesh.Abstractions.csproj" />
     <ProjectReference Include="..\HomeMesh.Domain\HomeMesh.Domain.csproj" />
+    <ProjectReference Include="..\HomeMesh.Infrastructure\HomeMesh.Infrastructure.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.0" />
   </ItemGroup>
 </Project>
