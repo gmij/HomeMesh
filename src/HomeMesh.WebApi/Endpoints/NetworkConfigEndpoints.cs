@@ -7,6 +7,23 @@ public static class NetworkConfigEndpoints
 {
     public static IEndpointRouteBuilder MapNetworkConfigEndpoints(this IEndpointRouteBuilder app)
     {
+        app.MapPost("/api/networks/{networkId}/easy-setup", async Task<IResult> (
+            string networkId,
+            EasySetupRequest request,
+            EasySetupService easySetupService,
+            CancellationToken cancellationToken) =>
+        {
+            try
+            {
+                var result = await easySetupService.ApplyAsync(networkId, request, cancellationToken);
+                return Results.Ok(result);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Results.BadRequest(new { error = ex.Message });
+            }
+        });
+
         app.MapPost("/api/networks/{networkId}/config/sync", async Task<IResult> (
             string networkId,
             NetworkConfigSyncService syncService,
