@@ -37,7 +37,7 @@ public static class NetworkEndpoints
 
                 return Results.Ok(new { result.Username, result.Role, result.ExpiresAt });
             }
-            catch (InvalidOperationException ex)
+            catch (InvalidOperationException)
             {
                 return Results.Unauthorized();
             }
