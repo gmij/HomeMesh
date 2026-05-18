@@ -1,5 +1,7 @@
 using HomeMesh.Application.Members;
 using HomeMesh.Application.Sync;
+using HomeMesh.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 
 namespace HomeMesh.WebApi.Endpoints;
 
@@ -22,6 +24,19 @@ public static class MemberEndpoints
         {
             var result = await syncService.SyncMembersAsync(networkId, cancellationToken);
             return Results.Ok(result);
+        });
+
+        app.MapGet("/api/networks/{networkId}/members/sync-state", async Task<IResult> (
+            string networkId,
+            HomeMeshDbContext db,
+            CancellationToken cancellationToken) =>
+        {
+            var states = await db.ProviderSyncStates
+                .Where(x => x.ResourceId == networkId && x.ResourceType == "Members")
+                .OrderBy(x => x.Provider)
+                .ToListAsync(cancellationToken);
+
+            return Results.Ok(states);
         });
 
         app.MapGet("/api/networks/{networkId}/members/{memberId}", async Task<IResult> (
