@@ -6,7 +6,7 @@ public static class MemberEndpoints
 {
     public static IEndpointRouteBuilder MapMemberEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapGet("/api/networks/{networkId}/members", async (
+        app.MapGet("/api/networks/{networkId}/members", async Task<IResult> (
             string networkId,
             MemberService memberService,
             CancellationToken cancellationToken) =>
@@ -14,7 +14,7 @@ public static class MemberEndpoints
             return Results.Ok(await memberService.ListAsync(networkId, cancellationToken));
         });
 
-        app.MapGet("/api/networks/{networkId}/members/{memberId}", async (
+        app.MapGet("/api/networks/{networkId}/members/{memberId}", async Task<IResult> (
             string networkId,
             string memberId,
             MemberService memberService,
@@ -29,7 +29,7 @@ public static class MemberEndpoints
             return Results.Ok(member);
         });
 
-        app.MapPatch("/api/networks/{networkId}/members/{memberId}", async (
+        app.MapPatch("/api/networks/{networkId}/members/{memberId}", async Task<IResult> (
             string networkId,
             string memberId,
             UpdateMemberRequest request,
@@ -47,7 +47,7 @@ public static class MemberEndpoints
             }
         });
 
-        app.MapPost("/api/networks/{networkId}/members/{memberId}/authorize", async (
+        app.MapPost("/api/networks/{networkId}/members/{memberId}/authorize", async Task<IResult> (
             string networkId,
             string memberId,
             MemberService memberService,
@@ -69,7 +69,7 @@ public static class MemberEndpoints
             }
         });
 
-        app.MapPost("/api/networks/{networkId}/members/{memberId}/deauthorize", async (
+        app.MapPost("/api/networks/{networkId}/members/{memberId}/deauthorize", async Task<IResult> (
             string networkId,
             string memberId,
             MemberService memberService,
@@ -91,7 +91,7 @@ public static class MemberEndpoints
             }
         });
 
-        app.MapDelete("/api/networks/{networkId}/members/{memberId}", async (
+        app.MapDelete("/api/networks/{networkId}/members/{memberId}", async Task<IResult> (
             string networkId,
             string memberId,
             MemberService memberService,
