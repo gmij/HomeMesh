@@ -6,7 +6,7 @@ public static class NetworkConfigEndpoints
 {
     public static IEndpointRouteBuilder MapNetworkConfigEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapGet("/api/networks/{networkId}/routes", async (
+        app.MapGet("/api/networks/{networkId}/routes", async Task<IResult> (
             string networkId,
             RouteService routeService,
             CancellationToken cancellationToken) =>
@@ -14,7 +14,7 @@ public static class NetworkConfigEndpoints
             return Results.Ok(await routeService.ListAsync(networkId, cancellationToken));
         });
 
-        app.MapPost("/api/networks/{networkId}/routes", async (
+        app.MapPost("/api/networks/{networkId}/routes", async Task<IResult> (
             string networkId,
             CreateRouteRequest request,
             RouteService routeService,
@@ -31,7 +31,7 @@ public static class NetworkConfigEndpoints
             }
         });
 
-        app.MapDelete("/api/networks/{networkId}/routes/{routeId}", async (
+        app.MapDelete("/api/networks/{networkId}/routes/{routeId}", async Task<IResult> (
             string networkId,
             string routeId,
             RouteService routeService,
@@ -46,7 +46,7 @@ public static class NetworkConfigEndpoints
             return Results.NoContent();
         });
 
-        app.MapGet("/api/networks/{networkId}/ip-pools", async (
+        app.MapGet("/api/networks/{networkId}/ip-pools", async Task<IResult> (
             string networkId,
             IpPoolService ipPoolService,
             CancellationToken cancellationToken) =>
@@ -54,7 +54,7 @@ public static class NetworkConfigEndpoints
             return Results.Ok(await ipPoolService.ListAsync(networkId, cancellationToken));
         });
 
-        app.MapPost("/api/networks/{networkId}/ip-pools", async (
+        app.MapPost("/api/networks/{networkId}/ip-pools", async Task<IResult> (
             string networkId,
             CreateIpPoolRequest request,
             IpPoolService ipPoolService,
@@ -71,7 +71,7 @@ public static class NetworkConfigEndpoints
             }
         });
 
-        app.MapDelete("/api/networks/{networkId}/ip-pools/{poolId}", async (
+        app.MapDelete("/api/networks/{networkId}/ip-pools/{poolId}", async Task<IResult> (
             string networkId,
             string poolId,
             IpPoolService ipPoolService,
@@ -86,7 +86,7 @@ public static class NetworkConfigEndpoints
             return Results.NoContent();
         });
 
-        app.MapGet("/api/networks/{networkId}/dns", async (
+        app.MapGet("/api/networks/{networkId}/dns", async Task<IResult> (
             string networkId,
             DnsConfigService dnsConfigService,
             CancellationToken cancellationToken) =>
@@ -100,7 +100,7 @@ public static class NetworkConfigEndpoints
             return Results.Ok(config);
         });
 
-        app.MapPut("/api/networks/{networkId}/dns", async (
+        app.MapPut("/api/networks/{networkId}/dns", async Task<IResult> (
             string networkId,
             UpsertDnsConfigRequest request,
             DnsConfigService dnsConfigService,
