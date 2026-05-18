@@ -6,12 +6,12 @@ public static class NetworkEndpoints
 {
     public static IEndpointRouteBuilder MapNetworkEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapGet("/api/networks", async (NetworkService networkService, CancellationToken cancellationToken) =>
+        app.MapGet("/api/networks", async Task<IResult> (NetworkService networkService, CancellationToken cancellationToken) =>
         {
             return Results.Ok(await networkService.ListAsync(cancellationToken));
         });
 
-        app.MapPost("/api/networks", async (CreateNetworkRequest request, NetworkService networkService, CancellationToken cancellationToken) =>
+        app.MapPost("/api/networks", async Task<IResult> (CreateNetworkRequest request, NetworkService networkService, CancellationToken cancellationToken) =>
         {
             if (string.IsNullOrWhiteSpace(request.Name))
             {
@@ -29,7 +29,7 @@ public static class NetworkEndpoints
             }
         });
 
-        app.MapGet("/api/networks/{networkId}", async (string networkId, NetworkService networkService, CancellationToken cancellationToken) =>
+        app.MapGet("/api/networks/{networkId}", async Task<IResult> (string networkId, NetworkService networkService, CancellationToken cancellationToken) =>
         {
             var network = await networkService.GetAsync(networkId, cancellationToken);
             if (network is null)
@@ -40,7 +40,7 @@ public static class NetworkEndpoints
             return Results.Ok(network);
         });
 
-        app.MapDelete("/api/networks/{networkId}", async (string networkId, NetworkService networkService, CancellationToken cancellationToken) =>
+        app.MapDelete("/api/networks/{networkId}", async Task<IResult> (string networkId, NetworkService networkService, CancellationToken cancellationToken) =>
         {
             var deleted = await networkService.DeleteAsync(networkId, cancellationToken);
             if (!deleted)
