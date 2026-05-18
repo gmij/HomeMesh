@@ -1,3 +1,4 @@
+using System.Text.Json;
 using HomeMesh.Application.Auth;
 using HomeMesh.Application.Networks;
 using HomeMesh.Application.Setup;
@@ -101,6 +102,44 @@ public static class NetworkEndpoints
             }
 
             return Results.Ok(network);
+        });
+
+        app.MapGet("/api/networks/{networkId}/plant-file", async Task<IResult> (string networkId, HomeMeshDbContext db, CancellationToken cancellationToken) =>
+        {
+            var network = await db.Networks.FirstOrDefaultAsync(x => x.Id == networkId, cancellationToken);
+            if (network is null)
+            {
+                return Results.NotFound(new { error = "Network not found." });
+            }
+
+            var binding = await db.NetworkProviderBindings
+                .Where(x => x.NetworkId == networkId)
+                .OrderByDescending(x => x.IsPrimary)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (binding is null)
+            {
+                return Results.NotFound(new { error = "Network provider binding not found." });
+            }
+
+            var payload = new
+            {
+                type = "HomeMesh.NetworkJoinFile.v1",
+                networkId = network.Id,
+                networkName = network.Name,
+                cidr = network.Cidr,
+                autoApproveMembers = network.AutoApproveMembers,
+                provider = binding.Provider,
+                providerNetworkId = binding.ProviderNetworkId,
+                generatedAt = DateTimeOffset.UtcNow
+            };
+
+            var content = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
+            var safeName = network.Name.Trim().Replace(' ', '-');
+            return Results.File(
+                System.Text.Encoding.UTF8.GetBytes(content),
+                "application/json",
+                $"homemesh-{safeName}-{binding.Provider}.plant.json");
         });
 
         app.MapDelete("/api/networks/{networkId}", async Task<IResult> (string networkId, NetworkService networkService, CancellationToken cancellationToken) =>
