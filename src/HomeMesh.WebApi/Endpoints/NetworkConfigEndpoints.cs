@@ -1,4 +1,5 @@
 using HomeMesh.Application.NetworkConfig;
+using HomeMesh.Application.Sync;
 
 namespace HomeMesh.WebApi.Endpoints;
 
@@ -6,6 +7,15 @@ public static class NetworkConfigEndpoints
 {
     public static IEndpointRouteBuilder MapNetworkConfigEndpoints(this IEndpointRouteBuilder app)
     {
+        app.MapPost("/api/networks/{networkId}/config/sync", async Task<IResult> (
+            string networkId,
+            NetworkConfigSyncService syncService,
+            CancellationToken cancellationToken) =>
+        {
+            var result = await syncService.SyncConfigAsync(networkId, cancellationToken);
+            return Results.Ok(result);
+        });
+
         app.MapGet("/api/networks/{networkId}/routes", async Task<IResult> (
             string networkId,
             RouteService routeService,
