@@ -1,4 +1,5 @@
 using HomeMesh.Application.Networks;
+using HomeMesh.WebApi.Admin;
 
 namespace HomeMesh.WebApi.Endpoints;
 
@@ -6,6 +7,10 @@ public static class NetworkEndpoints
 {
     public static IEndpointRouteBuilder MapNetworkEndpoints(this IEndpointRouteBuilder app)
     {
+        app.MapGet("/", () => Results.Redirect("/admin"));
+
+        app.MapGet("/admin", () => Results.Content(AdminConsoleHtml.Content, "text/html"));
+
         app.MapGet("/api/networks", async Task<IResult> (NetworkService networkService, CancellationToken cancellationToken) =>
         {
             return Results.Ok(await networkService.ListAsync(cancellationToken));
