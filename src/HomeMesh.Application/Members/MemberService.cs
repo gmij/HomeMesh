@@ -39,6 +39,104 @@ public sealed class MemberService(HomeMeshDbContext db, IEnumerable<ISdwanContro
         return member is null ? null : ToDto(member);
     }
 
+    public async Task<MemberDto> JoinAsync(string networkId, JoinNetworkRequest request, CancellationToken cancellationToken = default)
+    {
+        var network = await db.Networks.FirstOrDefaultAsync(x => x.Id == networkId, cancellationToken)
+            ?? throw new InvalidOperationException("Network not found.");
+
+        var binding = await db.NetworkProviderBindings
+            .Where(x => x.NetworkId == networkId)
+            .OrderByDescending(x => x.IsPrimary)
+            .FirstOrDefaultAsync(cancellationToken)
+            ?? throw new InvalidOperationException("Network provider binding not found.");
+
+        var providerMemberId = NormalizeRequired(request.ProviderMemberId, "Provider member id is required.");
+        var now = DateTimeOffset.UtcNow;
+
+        var device = await db.Devices.FirstOrDefaultAsync(
+            x => x.HomeId == network.HomeId && x.Fingerprint == request.Fingerprint,
+            cancellationToken);
+
+        if (device is null)
+        {
+            device = new Device
+            {
+                Id = IdGenerator.NewId("dev"),
+                HomeId = network.HomeId,
+                Name = string.IsNullOrWhiteSpace(request.DeviceName) ? providerMemberId : request.DeviceName.Trim(),
+                Platform = string.IsNullOrWhiteSpace(request.Platform) ? "Unknown" : request.Platform.Trim(),
+                Fingerprint = request.Fingerprint,
+                PublicKey = request.PublicKey,
+                LastSeenAt = now,
+                CreatedAt = now,
+                UpdatedAt = now
+            };
+            db.Devices.Add(device);
+        }
+        else
+        {
+            if (!string.IsNullOrWhiteSpace(request.DeviceName)) device.Name = request.DeviceName.Trim();
+            if (!string.IsNullOrWhiteSpace(request.Platform)) device.Platform = request.Platform.Trim();
+            if (!string.IsNullOrWhiteSpace(request.PublicKey)) device.PublicKey = request.PublicKey.Trim();
+            device.LastSeenAt = now;
+            device.UpdatedAt = now;
+        }
+
+        var member = await db.NetworkMembers.FirstOrDefaultAsync(
+            x => x.NetworkId == networkId && x.Provider == binding.Provider && x.ProviderMemberId == providerMemberId,
+            cancellationToken);
+
+        if (member is null)
+        {
+            member = new NetworkMember
+            {
+                Id = IdGenerator.NewId("member"),
+                NetworkId = networkId,
+                Provider = binding.Provider,
+                ProviderMemberId = providerMemberId,
+                CreatedAt = now
+            };
+            db.NetworkMembers.Add(member);
+        }
+
+        member.DeviceId = device.Id;
+        member.Name = device.Name;
+        member.Authorized = network.AutoApproveMembers;
+        member.Online = true;
+        member.IpAssignmentsJson = JsonSerializer.Serialize(request.IpAssignments ?? Array.Empty<string>());
+        member.LastSeenAt = now;
+        member.UpdatedAt = now;
+
+        if (network.AutoApproveMembers)
+        {
+            var provider = providers.FirstOrDefault(x => string.Equals(x.ProviderName, binding.Provider, StringComparison.OrdinalIgnoreCase));
+            if (provider is not null)
+            {
+                await provider.UpdateMemberAsync(
+                    binding.ProviderNetworkId,
+                    providerMemberId,
+                    new UpdateVirtualMemberRequest(Authorized: true, IpAssignments: request.IpAssignments),
+                    cancellationToken);
+            }
+        }
+
+        db.AuditLogs.Add(new AuditLog
+        {
+            Id = IdGenerator.NewId("audit"),
+            HomeId = network.HomeId,
+            UserId = device.Id,
+            Type = "DeviceJoined",
+            Actor = device.Name,
+            TargetType = "Network",
+            TargetId = network.Id,
+            Message = $"设备通过 plant 文件加入网络：{device.Name}",
+            CreatedAt = now
+        });
+
+        await db.SaveChangesAsync(cancellationToken);
+        return ToDto(member);
+    }
+
     public async Task<MemberDto> UpsertFromProviderAsync(string networkId, string provider, VirtualMemberInfo memberInfo, CancellationToken cancellationToken = default)
     {
         var now = DateTimeOffset.UtcNow;
@@ -162,7 +260,25 @@ public sealed class MemberService(HomeMeshDbContext db, IEnumerable<ISdwanContro
         x.LastSeenAt,
         x.CreatedAt,
         x.UpdatedAt);
+
+    private static string NormalizeRequired(string value, string message)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            throw new InvalidOperationException(message);
+        }
+
+        return value.Trim();
+    }
 }
+
+public sealed record JoinNetworkRequest(
+    string ProviderMemberId,
+    string? DeviceName = null,
+    string? Platform = null,
+    string? Fingerprint = null,
+    string? PublicKey = null,
+    IReadOnlyList<string>? IpAssignments = null);
 
 public sealed record UpdateMemberRequest(
     string? Name = null,
