@@ -43,10 +43,22 @@ public sealed class NetworkSyncService(
         {
             var providerMembers = await provider.ListMembersAsync(binding.ProviderNetworkId, cancellationToken);
             var synced = 0;
+            var autoApproved = 0;
 
             foreach (var providerMember in providerMembers)
             {
-                await memberService.UpsertFromProviderAsync(networkId, binding.Provider, providerMember, cancellationToken);
+                var memberInfo = providerMember;
+                if (network.AutoApproveMembers && !providerMember.Authorized)
+                {
+                    memberInfo = await provider.UpdateMemberAsync(
+                        binding.ProviderNetworkId,
+                        providerMember.ProviderMemberId,
+                        new UpdateVirtualMemberRequest(Authorized: true),
+                        cancellationToken);
+                    autoApproved++;
+                }
+
+                await memberService.UpsertFromProviderAsync(networkId, binding.Provider, memberInfo, cancellationToken);
                 synced++;
             }
 
@@ -62,7 +74,7 @@ public sealed class NetworkSyncService(
                 Actor = "system",
                 TargetType = "Network",
                 TargetId = network.Id,
-                Message = $"同步网络成员：{network.Name}，共 {synced} 个成员",
+                Message = $"同步网络成员：{network.Name}，共 {synced} 个成员，自动授权 {autoApproved} 个",
                 CreatedAt = now
             });
 
@@ -73,6 +85,7 @@ public sealed class NetworkSyncService(
                 binding.Provider,
                 binding.ProviderNetworkId,
                 synced,
+                autoApproved,
                 "Healthy",
                 null,
                 now);
@@ -88,6 +101,7 @@ public sealed class NetworkSyncService(
                 network.Id,
                 binding.Provider,
                 binding.ProviderNetworkId,
+                0,
                 0,
                 "Error",
                 ex.Message,
@@ -129,6 +143,7 @@ public sealed record MemberSyncResultDto(
     string Provider,
     string ProviderNetworkId,
     int SyncedMemberCount,
+    int AutoApprovedMemberCount,
     string Status,
     string? Error,
     DateTimeOffset SyncedAt);
