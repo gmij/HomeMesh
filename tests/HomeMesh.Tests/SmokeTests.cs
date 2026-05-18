@@ -1,3 +1,5 @@
+using Xunit;
+
 namespace HomeMesh.Tests;
 
 public sealed class SmokeTests
