@@ -1,5 +1,7 @@
 using HomeMesh.Application.NetworkConfig;
 using HomeMesh.Application.Sync;
+using HomeMesh.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 
 namespace HomeMesh.WebApi.Endpoints;
 
@@ -31,6 +33,19 @@ public static class NetworkConfigEndpoints
         {
             var result = await syncService.SyncConfigAsync(networkId, cancellationToken);
             return Results.Ok(result);
+        });
+
+        app.MapGet("/api/networks/{networkId}/config/sync-state", async Task<IResult> (
+            string networkId,
+            HomeMeshDbContext db,
+            CancellationToken cancellationToken) =>
+        {
+            var states = await db.ProviderSyncStates
+                .Where(x => x.ResourceId == networkId && x.ResourceType == "NetworkConfig")
+                .OrderBy(x => x.Provider)
+                .ToListAsync(cancellationToken);
+
+            return Results.Ok(states);
         });
 
         app.MapGet("/api/networks/{networkId}/routes", async Task<IResult> (
