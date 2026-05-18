@@ -18,6 +18,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<DnsConfigService>();
         services.AddScoped<MemberService>();
         services.AddScoped<NetworkSyncService>();
+        services.AddScoped<NetworkConfigSyncService>();
         return services;
     }
 }
