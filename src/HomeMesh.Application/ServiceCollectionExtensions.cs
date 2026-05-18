@@ -16,6 +16,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<RouteService>();
         services.AddScoped<IpPoolService>();
         services.AddScoped<DnsConfigService>();
+        services.AddScoped<EasySetupService>();
         services.AddScoped<MemberService>();
         services.AddScoped<NetworkSyncService>();
         services.AddScoped<NetworkConfigSyncService>();
