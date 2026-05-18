@@ -1,3 +1,4 @@
+using HomeMesh.Application.Auth;
 using HomeMesh.Application.Members;
 using HomeMesh.Application.NetworkConfig;
 using HomeMesh.Application.Networks;
@@ -12,6 +13,7 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddHomeMeshApplication(this IServiceCollection services)
     {
         services.AddScoped<SetupService>();
+        services.AddScoped<AuthService>();
         services.AddScoped<NetworkService>();
         services.AddScoped<RouteService>();
         services.AddScoped<IpPoolService>();
