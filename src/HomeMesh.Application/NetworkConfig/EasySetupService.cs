@@ -28,6 +28,7 @@ public sealed class EasySetupService(HomeMeshDbContext db)
 
         network.Cidr = cidr;
         network.V4AssignMode = request.EnableAutoAssign;
+        network.AutoApproveMembers = request.AutoApproveMembers;
         network.UpdatedAt = now;
 
         await UpsertRouteAsync(networkId, cidr, now, cancellationToken);
@@ -47,7 +48,7 @@ public sealed class EasySetupService(HomeMeshDbContext db)
         });
 
         await db.SaveChangesAsync(cancellationToken);
-        return new EasySetupResultDto(network.Id, cidr, poolStart, poolEnd, request.EnableAutoAssign);
+        return new EasySetupResultDto(network.Id, cidr, poolStart, poolEnd, request.EnableAutoAssign, request.AutoApproveMembers);
     }
 
     private async Task UpsertRouteAsync(string networkId, string cidr, DateTimeOffset now, CancellationToken cancellationToken)
