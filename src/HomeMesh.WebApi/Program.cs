@@ -1,5 +1,6 @@
 using HomeMesh.Abstractions.Providers;
 using HomeMesh.Application;
+using HomeMesh.Application.Auth;
 using HomeMesh.Application.Setup;
 using HomeMesh.Infrastructure;
 using HomeMesh.Infrastructure.Persistence;
@@ -31,6 +32,26 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<HomeMeshDbContext>();
     await db.Database.EnsureCreatedAsync();
 }
+
+app.Use(async (context, next) =>
+{
+    if (!RequiresAdminSession(context.Request.Path))
+    {
+        await next();
+        return;
+    }
+
+    var authService = context.RequestServices.GetRequiredService<AuthService>();
+    var user = authService.ValidateSession(context.Request.Cookies["hm_session"]);
+    if (user is null)
+    {
+        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+        await context.Response.WriteAsJsonAsync(new { error = "Unauthorized" });
+        return;
+    }
+
+    await next();
+});
 
 app.UseSwagger();
 app.UseSwaggerUI();
@@ -103,5 +124,13 @@ app.MapGet("/api/audit-logs", async (HomeMeshDbContext db, CancellationToken can
 });
 
 app.Run();
+
+static bool RequiresAdminSession(PathString path)
+{
+    if (!path.StartsWithSegments("/api")) return false;
+    if (path.StartsWithSegments("/api/auth")) return false;
+    if (path.StartsWithSegments("/api/setup")) return false;
+    return true;
+}
 
 public sealed record SetupAdminRequest(string Username, string Password);
