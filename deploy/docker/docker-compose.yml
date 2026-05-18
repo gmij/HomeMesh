@@ -13,6 +13,10 @@ services:
       # - /var/lib/zerotier-one/authtoken.secret:/var/lib/zerotier-one/authtoken.secret:ro
     environment:
       ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__HomeMesh: Data Source=/app/data/homemesh.db
+      Providers__ZeroTier__Enabled: "true"
+      Providers__ZeroTier__ApiBaseUrl: http://127.0.0.1:9993
+      Providers__ZeroTier__AuthTokenPath: /var/lib/zerotier-one/authtoken.secret
 
 volumes:
   homemesh-data:
