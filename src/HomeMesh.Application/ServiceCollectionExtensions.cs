@@ -1,7 +1,9 @@
+using HomeMesh.Abstractions.Providers;
 using HomeMesh.Application.Auth;
 using HomeMesh.Application.Members;
 using HomeMesh.Application.NetworkConfig;
 using HomeMesh.Application.Networks;
+using HomeMesh.Application.Providers;
 using HomeMesh.Application.Setup;
 using HomeMesh.Application.Sync;
 using Microsoft.Extensions.DependencyInjection;
@@ -22,6 +24,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<MemberService>();
         services.AddScoped<NetworkSyncService>();
         services.AddScoped<NetworkConfigSyncService>();
+        services.AddSingleton<DemoControllerProvider>();
+        services.AddSingleton<ISdwanControllerProvider, DemoControllerProvider>();
         return services;
     }
 }
