@@ -19,6 +19,7 @@ public sealed class NetworkService(HomeMeshDbContext db, IEnumerable<ISdwanContr
                 x.Cidr,
                 x.Private,
                 x.V4AssignMode,
+                x.AutoApproveMembers,
                 x.Status,
                 x.CreatedAt,
                 x.UpdatedAt))
@@ -56,6 +57,7 @@ public sealed class NetworkService(HomeMeshDbContext db, IEnumerable<ISdwanContr
             network.Cidr,
             network.Private,
             network.V4AssignMode,
+            network.AutoApproveMembers,
             network.Status,
             memberCount,
             onlineMemberCount,
@@ -93,6 +95,7 @@ public sealed class NetworkService(HomeMeshDbContext db, IEnumerable<ISdwanContr
             Cidr = request.Cidr,
             Private = request.Private,
             V4AssignMode = true,
+            AutoApproveMembers = request.AutoApproveMembers,
             Status = "Created",
             CreatedAt = now,
             UpdatedAt = now
@@ -177,6 +180,7 @@ public sealed class NetworkService(HomeMeshDbContext db, IEnumerable<ISdwanContr
         network.Cidr,
         network.Private,
         network.V4AssignMode,
+        network.AutoApproveMembers,
         network.Status,
         network.CreatedAt,
         network.UpdatedAt);
@@ -186,7 +190,8 @@ public sealed record CreateNetworkRequest(
     string Name,
     string Provider = "ZeroTier",
     string? Cidr = null,
-    bool Private = true);
+    bool Private = true,
+    bool AutoApproveMembers = false);
 
 public sealed record NetworkSummaryDto(
     string Id,
@@ -195,6 +200,7 @@ public sealed record NetworkSummaryDto(
     string? Cidr,
     bool Private,
     bool V4AssignMode,
+    bool AutoApproveMembers,
     string Status,
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt);
@@ -206,6 +212,7 @@ public sealed record NetworkDetailDto(
     string? Cidr,
     bool Private,
     bool V4AssignMode,
+    bool AutoApproveMembers,
     string Status,
     int MemberCount,
     int OnlineMemberCount,
