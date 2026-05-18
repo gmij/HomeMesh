@@ -1,7 +1,9 @@
 using HomeMesh.Application.Auth;
 using HomeMesh.Application.Networks;
 using HomeMesh.Application.Setup;
+using HomeMesh.Infrastructure.Persistence;
 using HomeMesh.WebApi.Admin;
+using Microsoft.EntityFrameworkCore;
 
 namespace HomeMesh.WebApi.Endpoints;
 
@@ -48,6 +50,23 @@ public static class NetworkEndpoints
             authService.Logout(httpContext.Request.Cookies[SessionCookieName]);
             httpContext.Response.Cookies.Delete(SessionCookieName);
             return Results.Ok(new { loggedOut = true });
+        });
+
+        app.MapGet("/api/dashboard/summary", async Task<IResult> (HomeMeshDbContext db, CancellationToken cancellationToken) =>
+        {
+            var summary = new
+            {
+                networkCount = await db.Networks.CountAsync(cancellationToken),
+                memberCount = await db.NetworkMembers.CountAsync(cancellationToken),
+                authorizedMemberCount = await db.NetworkMembers.CountAsync(x => x.Authorized, cancellationToken),
+                onlineMemberCount = await db.NetworkMembers.CountAsync(x => x.Online, cancellationToken),
+                routeCount = await db.Routes.CountAsync(cancellationToken),
+                ipPoolCount = await db.IpPools.CountAsync(cancellationToken),
+                errorSyncCount = await db.ProviderSyncStates.CountAsync(x => x.Status == "Error", cancellationToken),
+                lastAuditAt = await db.AuditLogs.OrderByDescending(x => x.CreatedAt).Select(x => x.CreatedAt).FirstOrDefaultAsync(cancellationToken)
+            };
+
+            return Results.Ok(summary);
         });
 
         app.MapGet("/api/networks", async Task<IResult> (NetworkService networkService, CancellationToken cancellationToken) =>
