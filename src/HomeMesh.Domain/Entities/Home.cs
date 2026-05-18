@@ -17,6 +17,7 @@ public sealed class Network
     public string? Cidr { get; set; }
     public bool Private { get; set; } = true;
     public bool V4AssignMode { get; set; } = true;
+    public bool AutoApproveMembers { get; set; }
     public string? V6AssignModeJson { get; set; }
     public string Status { get; set; } = "Unknown";
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
