@@ -9,6 +9,23 @@ public static class MemberEndpoints
 {
     public static IEndpointRouteBuilder MapMemberEndpoints(this IEndpointRouteBuilder app)
     {
+        app.MapPost("/api/join/{networkId}", async Task<IResult> (
+            string networkId,
+            JoinNetworkRequest request,
+            MemberService memberService,
+            CancellationToken cancellationToken) =>
+        {
+            try
+            {
+                var member = await memberService.JoinAsync(networkId, request, cancellationToken);
+                return Results.Ok(member);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Results.BadRequest(new { error = ex.Message });
+            }
+        });
+
         app.MapGet("/api/networks/{networkId}/members", async Task<IResult> (
             string networkId,
             MemberService memberService,
