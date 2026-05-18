@@ -1,15 +1,54 @@
+using HomeMesh.Application.Auth;
 using HomeMesh.Application.Networks;
+using HomeMesh.Application.Setup;
 using HomeMesh.WebApi.Admin;
 
 namespace HomeMesh.WebApi.Endpoints;
 
 public static class NetworkEndpoints
 {
+    private const string SessionCookieName = "hm_session";
+
     public static IEndpointRouteBuilder MapNetworkEndpoints(this IEndpointRouteBuilder app)
     {
         app.MapGet("/", () => Results.Redirect("/admin"));
 
         app.MapGet("/admin", () => Results.Content(AdminConsoleHtml.Content, "text/html"));
+
+        app.MapGet("/api/auth/status", async Task<IResult> (SetupService setupService, AuthService authService, HttpContext httpContext, CancellationToken cancellationToken) =>
+        {
+            var initialized = await setupService.IsInitializedAsync(cancellationToken);
+            var user = authService.ValidateSession(httpContext.Request.Cookies[SessionCookieName]);
+            return Results.Ok(new { initialized, authenticated = user is not null, user });
+        });
+
+        app.MapPost("/api/auth/login", async Task<IResult> (LoginRequest request, AuthService authService, HttpContext httpContext, CancellationToken cancellationToken) =>
+        {
+            try
+            {
+                var result = await authService.LoginAsync(request.Username, request.Password, cancellationToken);
+                httpContext.Response.Cookies.Append(SessionCookieName, result.SessionId, new CookieOptions
+                {
+                    HttpOnly = true,
+                    SameSite = SameSiteMode.Strict,
+                    Secure = httpContext.Request.IsHttps,
+                    Expires = result.ExpiresAt
+                });
+
+                return Results.Ok(new { result.Username, result.Role, result.ExpiresAt });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Results.Unauthorized();
+            }
+        });
+
+        app.MapPost("/api/auth/logout", (AuthService authService, HttpContext httpContext) =>
+        {
+            authService.Logout(httpContext.Request.Cookies[SessionCookieName]);
+            httpContext.Response.Cookies.Delete(SessionCookieName);
+            return Results.Ok(new { loggedOut = true });
+        });
 
         app.MapGet("/api/networks", async Task<IResult> (NetworkService networkService, CancellationToken cancellationToken) =>
         {
