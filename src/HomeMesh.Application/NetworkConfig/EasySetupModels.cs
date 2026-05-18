@@ -5,6 +5,7 @@ public sealed record EasySetupRequest(
     string IpPoolStart,
     string IpPoolEnd,
     bool EnableAutoAssign = true,
+    bool AutoApproveMembers = false,
     string? DnsDomain = null,
     IReadOnlyList<string>? DnsServers = null);
 
@@ -13,4 +14,5 @@ public sealed record EasySetupResultDto(
     string Cidr,
     string IpPoolStart,
     string IpPoolEnd,
-    bool EnableAutoAssign);
+    bool EnableAutoAssign,
+    bool AutoApproveMembers);
