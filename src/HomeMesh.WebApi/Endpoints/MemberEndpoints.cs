@@ -1,4 +1,5 @@
 using HomeMesh.Application.Members;
+using HomeMesh.Application.Sync;
 
 namespace HomeMesh.WebApi.Endpoints;
 
@@ -12,6 +13,15 @@ public static class MemberEndpoints
             CancellationToken cancellationToken) =>
         {
             return Results.Ok(await memberService.ListAsync(networkId, cancellationToken));
+        });
+
+        app.MapPost("/api/networks/{networkId}/members/sync", async Task<IResult> (
+            string networkId,
+            NetworkSyncService syncService,
+            CancellationToken cancellationToken) =>
+        {
+            var result = await syncService.SyncMembersAsync(networkId, cancellationToken);
+            return Results.Ok(result);
         });
 
         app.MapGet("/api/networks/{networkId}/members/{memberId}", async Task<IResult> (
