@@ -3,7 +3,6 @@ using HomeMesh.Application.Auth;
 using HomeMesh.Application.Networks;
 using HomeMesh.Application.Setup;
 using HomeMesh.Infrastructure.Persistence;
-using HomeMesh.WebApi.Admin;
 using Microsoft.EntityFrameworkCore;
 
 namespace HomeMesh.WebApi.Endpoints;
@@ -14,10 +13,6 @@ public static class NetworkEndpoints
 
     public static IEndpointRouteBuilder MapNetworkEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapGet("/", () => Results.Redirect("/admin"));
-
-        app.MapGet("/admin", () => Results.Content(AdminConsoleHtml.Content, "text/html"));
-
         app.MapGet("/api/auth/status", async Task<IResult> (SetupService setupService, AuthService authService, HttpContext httpContext, CancellationToken cancellationToken) =>
         {
             var initialized = await setupService.IsInitializedAsync(cancellationToken);
@@ -55,6 +50,12 @@ public static class NetworkEndpoints
 
         app.MapGet("/api/dashboard/summary", async Task<IResult> (HomeMeshDbContext db, CancellationToken cancellationToken) =>
         {
+            var lastAuditAt = (await db.AuditLogs
+                    .Select(x => x.CreatedAt)
+                    .ToListAsync(cancellationToken))
+                .OrderByDescending(x => x)
+                .FirstOrDefault();
+
             var summary = new
             {
                 networkCount = await db.Networks.CountAsync(cancellationToken),
@@ -64,7 +65,7 @@ public static class NetworkEndpoints
                 routeCount = await db.Routes.CountAsync(cancellationToken),
                 ipPoolCount = await db.IpPools.CountAsync(cancellationToken),
                 errorSyncCount = await db.ProviderSyncStates.CountAsync(x => x.Status == "Error", cancellationToken),
-                lastAuditAt = await db.AuditLogs.OrderByDescending(x => x.CreatedAt).Select(x => x.CreatedAt).FirstOrDefaultAsync(cancellationToken)
+                lastAuditAt
             };
 
             return Results.Ok(summary);
@@ -90,6 +91,14 @@ public static class NetworkEndpoints
             catch (InvalidOperationException ex)
             {
                 return Results.BadRequest(new { error = ex.Message });
+            }
+            catch (Exception ex) when (IsProviderConnectionException(ex))
+            {
+                return Results.Json(new
+                {
+                    error = "Provider connection failed. Use Demo for local demos, or check ZeroTier service, ApiBaseUrl, and auth token configuration.",
+                    detail = ex.Message
+                }, statusCode: StatusCodes.Status502BadGateway);
             }
         });
 
@@ -154,5 +163,10 @@ public static class NetworkEndpoints
         });
 
         return app;
+    }
+
+    private static bool IsProviderConnectionException(Exception exception)
+    {
+        return exception is HttpRequestException or IOException or TaskCanceledException;
     }
 }

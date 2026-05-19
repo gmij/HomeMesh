@@ -83,9 +83,17 @@ Demo Provider 是内存态，仅用于演示与本地试跑。服务重启后，
 
 ## ZeroTier Provider 模式
 
-### 挂载 ZeroTier Local API Token
+### 连接 ZeroTier One Controller
 
-如果 ZeroTier One 跑在宿主机上，需要让容器读取宿主机的 token 文件。
+HomeMesh 和 ztncui 一样，默认连接同机的 ZeroTier One Local API，并读取：
+
+```text
+/var/lib/zerotier-one/authtoken.secret
+```
+
+也就是 ZeroTier One 进程仍负责底层 controller API，HomeMesh 负责替代 ztncui 的管理界面和 HomeMesh 自己的控制面编排。
+
+如果 HomeMesh 跑在 Docker 中，后续可以把 ZeroTier One 集成到同一个部署单元里；当前需要让容器能访问宿主机的 Local API，并读取宿主机的 token 文件。
 
 在 `deploy/docker/docker-compose.yml` 中启用类似配置：
 
@@ -95,13 +103,7 @@ volumes:
   - /var/lib/zerotier-one/authtoken.secret:/var/lib/zerotier-one/authtoken.secret:ro
 ```
 
-默认配置读取：
-
-```text
-/var/lib/zerotier-one/authtoken.secret
-```
-
-并访问：
+默认访问：
 
 ```text
 http://127.0.0.1:9993

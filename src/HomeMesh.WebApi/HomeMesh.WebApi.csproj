@@ -1,4 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <AdminConsoleProjectDir>$(MSBuildProjectDirectory)\..\HomeMesh.AdminConsole</AdminConsoleProjectDir>
+  </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\HomeMesh.Abstractions\HomeMesh.Abstractions.csproj" />
     <ProjectReference Include="..\HomeMesh.Application\HomeMesh.Application.csproj" />
@@ -14,4 +17,16 @@
     <PackageReference Include="Serilog.Settings.Configuration" Version="8.0.4" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.9.0" />
   </ItemGroup>
+  <Target Name="BuildAdminConsoleForPublish" BeforeTargets="ComputeFilesToPublish">
+    <Message Importance="high" Text="Building HomeMesh admin console into $(MSBuildProjectDirectory)\dist" />
+    <Exec WorkingDirectory="$(AdminConsoleProjectDir)" Command="npm ci" />
+    <Exec WorkingDirectory="$(AdminConsoleProjectDir)" Command="npm run build" />
+    <ItemGroup>
+      <DistFiles Include="$(MSBuildProjectDirectory)\dist\**\*.*" />
+      <ResolvedFileToPublish Include="@(DistFiles)">
+        <RelativePath>dist\%(RecursiveDir)%(Filename)%(Extension)</RelativePath>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </ResolvedFileToPublish>
+    </ItemGroup>
+  </Target>
 </Project>

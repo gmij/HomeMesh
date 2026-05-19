@@ -52,6 +52,11 @@ public sealed class ZeroTierControllerProvider(
 
     public async Task<VirtualNetworkInfo> CreateNetworkAsync(CreateVirtualNetworkRequest request, CancellationToken cancellationToken = default)
     {
+        if (!_options.Enabled)
+        {
+            throw new InvalidOperationException("ZeroTier provider is disabled.");
+        }
+
         var network = await client.CreateNetworkAsync(request.Name, cancellationToken)
             ?? throw new InvalidOperationException("ZeroTier local API returned an empty network after create.");
 

@@ -70,7 +70,7 @@ public sealed class NetworkService(HomeMeshDbContext db, IEnumerable<ISdwanContr
 
     public async Task<NetworkSummaryDto> CreateAsync(CreateNetworkRequest request, CancellationToken cancellationToken = default)
     {
-        var home = await db.Homes.OrderBy(x => x.CreatedAt).FirstOrDefaultAsync(cancellationToken);
+        var home = await db.Homes.FirstOrDefaultAsync(cancellationToken);
         if (home is null)
         {
             throw new InvalidOperationException("HomeMesh is not initialized. Please create the first administrator first.");

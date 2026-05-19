@@ -7,6 +7,13 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/main/Dotnet.gitignore
 
+# ide files
+.vs/
+
+# database files
+*.db
+
+
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/
@@ -43,6 +50,8 @@ ScaffoldingReadMe.txt
 ~$*
 *~
 CodeCoverage/
+node_modules/
+src/HomeMesh.WebApi/dist/
 
 # MSBuild Binary and Structured Log
 *.binlog

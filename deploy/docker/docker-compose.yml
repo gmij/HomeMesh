@@ -9,7 +9,9 @@ services:
       - "8080:8080"
     volumes:
       - homemesh-data:/app/data
-      # If ZeroTier One runs on the host, mount the auth token as read-only.
+      # ztncui-style deployment: run ZeroTier One on the same host/controller
+      # and let HomeMesh read the Local API token. The container must also be
+      # able to reach the ZeroTier One Local API configured below.
       # - /var/lib/zerotier-one/authtoken.secret:/var/lib/zerotier-one/authtoken.secret:ro
     environment:
       ASPNETCORE_ENVIRONMENT: Production

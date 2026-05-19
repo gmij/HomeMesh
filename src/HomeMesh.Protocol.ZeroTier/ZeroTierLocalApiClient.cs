@@ -4,7 +4,9 @@ using Microsoft.Extensions.Options;
 
 namespace HomeMesh.Protocol.ZeroTier;
 
-public sealed class ZeroTierLocalApiClient(HttpClient httpClient, IOptions<ZeroTierOptions> options)
+public sealed class ZeroTierLocalApiClient(
+    HttpClient httpClient,
+    IOptions<ZeroTierOptions> options)
 {
     private readonly ZeroTierOptions _options = options.Value;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
@@ -123,11 +125,19 @@ public sealed class ZeroTierLocalApiClient(HttpClient httpClient, IOptions<ZeroT
             throw new InvalidOperationException("ZeroTier auth token path is not configured.");
         }
 
-        if (!File.Exists(_options.AuthTokenPath))
+        var authTokenPath = ResolveAuthTokenPath();
+        if (!File.Exists(authTokenPath))
         {
-            throw new FileNotFoundException("ZeroTier auth token file was not found.", _options.AuthTokenPath);
+            throw new FileNotFoundException("ZeroTier auth token file was not found.", authTokenPath);
         }
 
-        return (await File.ReadAllTextAsync(_options.AuthTokenPath, cancellationToken)).Trim();
+        return (await File.ReadAllTextAsync(authTokenPath, cancellationToken)).Trim();
+    }
+
+    private string ResolveAuthTokenPath()
+    {
+        return Path.IsPathRooted(_options.AuthTokenPath)
+            ? _options.AuthTokenPath
+            : Path.GetFullPath(_options.AuthTokenPath);
     }
 }
