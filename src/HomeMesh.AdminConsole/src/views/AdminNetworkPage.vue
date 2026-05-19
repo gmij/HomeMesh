@@ -15,6 +15,7 @@
     :pools="pools"
     :dns-config="dnsConfig"
     :sync-cards="syncCards"
+    :delete-loading="deleteLoading"
     :route-form="{ target: routeForm.target, via: routeForm.via }"
     :pool-form="{ ipRangeStart: poolForm.ipRangeStart, ipRangeEnd: poolForm.ipRangeEnd }"
     :dns-form="dnsForm"
@@ -25,6 +26,7 @@
     @open-easy-setup="easySetupModalOpen = true"
     @sync-members="syncMembers"
     @sync-config="syncConfig"
+    @delete-network="deleteNetwork"
     @update:member-ip="onMemberIpInput"
     @toggle-auth="toggleMemberAuth"
     @assign-ip="assignIp"
@@ -53,6 +55,8 @@ const {
   assignIp,
   createPool,
   createRoute,
+  deleteLoading,
+  deleteNetwork,
   deletePool,
   deleteRoute,
   detailMetrics,

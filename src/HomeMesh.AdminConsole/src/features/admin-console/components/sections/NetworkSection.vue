@@ -3,15 +3,15 @@
     <div class="section-heading">
       <div class="heading-badge">2</div>
       <div class="heading-copy">
-        <h2>家庭网络</h2>
-        <p>成员接入、网络配置、同步状态都收在这个工作区。</p>
+        <h2>Networks</h2>
+        <p>Manage member access, network settings, and sync activity from one place.</p>
       </div>
       <div class="section-tools">
         <a-select
           :value="selectedNetworkId"
           class="network-switcher"
           :options="networkOptions"
-          placeholder="选择网络"
+          placeholder="Select network"
           @update:value="emit('update:selected-network-id', $event)"
         />
         <a-button
@@ -23,15 +23,27 @@
           Easy Setup
         </a-button>
         <a-button :icon="h(SyncOutlined)" :disabled="!selectedNetworkId" @click="emit('sync-members')">
-          同步成员
+          Sync Members
         </a-button>
         <a-button
           :icon="h(DeploymentUnitOutlined)"
           :disabled="!selectedNetworkId"
           @click="emit('sync-config')"
         >
-          同步设置
+          Sync Config
         </a-button>
+        <a-popconfirm
+          title="Delete this network?"
+          description="This removes the HomeMesh network, provider binding, and related config. This cannot be undone."
+          ok-text="Delete"
+          cancel-text="Cancel"
+          :disabled="!selectedNetworkId"
+          @confirm="emit('delete-network')"
+        >
+          <a-button :disabled="!selectedNetworkId" :loading="deleteLoading" danger>
+            Delete Network
+          </a-button>
+        </a-popconfirm>
       </div>
     </div>
 
@@ -47,21 +59,25 @@
         <template v-if="selectedNetwork">
           <div class="network-topbar">
             <div>
-              <div class="crumb-line">家庭网络 &gt; {{ selectedNetwork.name }}</div>
+              <div class="crumb-line">Networks &gt; {{ selectedNetwork.name }}</div>
               <h3>{{ selectedNetwork.name }}</h3>
             </div>
-            <div class="toolbar-note">最近审计 {{ formattedLastAudit }}</div>
+            <div class="toolbar-note">Last audit: {{ formattedLastAudit }}</div>
           </div>
 
-          <a-tabs :active-key="networkTab" class="network-tabs" @update:activeKey="emit('update:network-tab', $event as NetworkTabKey)">
-            <a-tab-pane key="overview" tab="概览" />
-            <a-tab-pane key="members" tab="成员" />
-            <a-tab-pane key="routes" tab="路由" />
+          <a-tabs
+            :active-key="networkTab"
+            class="network-tabs"
+            @update:activeKey="emit('update:network-tab', $event as NetworkTabKey)"
+          >
+            <a-tab-pane key="overview" tab="Overview" />
+            <a-tab-pane key="members" tab="Members" />
+            <a-tab-pane key="routes" tab="Routes" />
             <a-tab-pane key="dns" tab="DNS" />
-            <a-tab-pane key="sync" tab="同步" />
-            <a-tab-pane key="gateway" tab="网关" />
+            <a-tab-pane key="sync" tab="Sync" />
+            <a-tab-pane key="gateway" tab="Gateway" />
             <a-tab-pane key="acl" tab="ACL" />
-            <a-tab-pane key="protocol" tab="协议配置" />
+            <a-tab-pane key="protocol" tab="Protocol" />
           </a-tabs>
 
           <div class="info-strip">
@@ -79,7 +95,7 @@
             </div>
             <div class="info-item">
               <span>CIDR</span>
-              <strong>{{ selectedNetwork.cidr ?? '自动分配' }}</strong>
+              <strong>{{ selectedNetwork.cidr ?? 'Auto assigned' }}</strong>
             </div>
           </div>
 
@@ -95,7 +111,7 @@
             <div class="content-split">
               <article class="panel-card">
                 <div class="panel-card__header">
-                  <h3>Provider 绑定</h3>
+                  <h3>Provider Bindings</h3>
                 </div>
                 <div class="binding-list">
                   <div
@@ -108,7 +124,7 @@
                       <span>{{ binding.providerNetworkId }}</span>
                     </div>
                     <a-tag :color="binding.isPrimary ? 'blue' : 'default'">
-                      {{ binding.isPrimary ? '主绑定' : '附加' }}
+                      {{ binding.isPrimary ? 'Primary' : 'Secondary' }}
                     </a-tag>
                   </div>
                 </div>
@@ -116,23 +132,23 @@
 
               <article class="panel-card">
                 <div class="panel-card__header">
-                  <h3>网络策略</h3>
+                  <h3>Policy</h3>
                 </div>
                 <div class="policy-grid">
                   <div class="policy-item">
-                    <span>自动批准成员</span>
-                    <strong>{{ selectedNetwork.autoApproveMembers ? '开启' : '关闭' }}</strong>
+                    <span>Auto approve members</span>
+                    <strong>{{ selectedNetwork.autoApproveMembers ? 'Enabled' : 'Disabled' }}</strong>
                   </div>
                   <div class="policy-item">
-                    <span>自动分配 IP</span>
-                    <strong>{{ selectedNetwork.v4AssignMode ? '开启' : '关闭' }}</strong>
+                    <span>Auto assign IP</span>
+                    <strong>{{ selectedNetwork.v4AssignMode ? 'Enabled' : 'Disabled' }}</strong>
                   </div>
                   <div class="policy-item">
-                    <span>网络模式</span>
+                    <span>Network mode</span>
                     <strong>{{ selectedNetwork.private ? 'Private' : 'Public' }}</strong>
                   </div>
                   <div class="policy-item">
-                    <span>状态</span>
+                    <span>Status</span>
                     <strong>{{ selectedNetwork.status }}</strong>
                   </div>
                 </div>
@@ -144,13 +160,13 @@
             <article class="panel-card panel-card--table">
               <div class="panel-card__header panel-card__header--table">
                 <div>
-                  <h3>成员清单</h3>
-                  <span>{{ members.length ? `共 ${members.length} 台设备` : '等待成员接入' }}</span>
+                  <h3>Members</h3>
+                  <span>{{ members.length ? `${members.length} devices` : 'Waiting for members to join' }}</span>
                 </div>
                 <div class="inline-actions">
-                  <a-button size="small" @click="emit('sync-members')">同步成员</a-button>
+                  <a-button size="small" @click="emit('sync-members')">Sync Members</a-button>
                   <a-button size="small" type="primary" ghost @click="emit('navigate', prototypeSections.access)">
-                    设备接入
+                    Device Access
                   </a-button>
                 </div>
               </div>
@@ -159,13 +175,13 @@
                 <table class="prototype-table prototype-table--members">
                   <thead>
                     <tr>
-                      <th>设备</th>
-                      <th>角色</th>
-                      <th>虚拟 IP</th>
-                      <th>授权</th>
-                      <th>在线</th>
-                      <th>标签</th>
-                      <th>操作</th>
+                      <th>Device</th>
+                      <th>Role</th>
+                      <th>Virtual IP</th>
+                      <th>Auth</th>
+                      <th>Online</th>
+                      <th>Tags</th>
+                      <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody v-if="members.length">
@@ -188,21 +204,21 @@
                       </td>
                       <td>
                         <a-tag :color="member.authorized ? 'green' : 'orange'">
-                          {{ member.authorized ? '已授权' : '待授权' }}
+                          {{ member.authorized ? 'Authorized' : 'Pending' }}
                         </a-tag>
                       </td>
                       <td>
                         <span class="online-dot" :class="{ offline: !member.online }"></span>
-                        {{ member.online ? '在线' : '离线' }}
+                        {{ member.online ? 'Online' : 'Offline' }}
                       </td>
                       <td>{{ parseTags(member.tagsJson).join(', ') || '-' }}</td>
                       <td>
                         <div class="row-actions">
                           <a-button size="small" type="link" @click="emit('toggle-auth', member)">
-                            {{ member.authorized ? '拒绝' : '授权' }}
+                            {{ member.authorized ? 'Revoke' : 'Authorize' }}
                           </a-button>
                           <a-button size="small" type="link" @click="emit('assign-ip', member)">
-                            保存 IP
+                            Save IP
                           </a-button>
                         </div>
                       </td>
@@ -212,7 +228,7 @@
                     <tr>
                       <td colspan="7" class="table-empty-cell">
                         <div class="table-empty-state">
-                          <a-empty :image="simpleEmptyImage" description="当前网络还没有成员设备" />
+                          <a-empty :image="simpleEmptyImage" description="No member devices yet" />
                         </div>
                       </td>
                     </tr>
@@ -226,7 +242,7 @@
             <div class="content-split">
               <article class="panel-card">
                 <div class="panel-card__header">
-                  <h3>路由规则</h3>
+                  <h3>Routes</h3>
                 </div>
                 <div v-if="routes.length" class="stack-list">
                   <div v-for="route in routes" :key="route.id" class="stack-item">
@@ -234,10 +250,10 @@
                       <strong>{{ route.target }}</strong>
                       <span>{{ route.type }} / {{ route.via || 'provider managed' }}</span>
                     </div>
-                    <a-button size="small" danger @click="emit('delete-route', route.id)">删除</a-button>
+                    <a-button size="small" danger @click="emit('delete-route', route.id)">Delete</a-button>
                   </div>
                 </div>
-                <a-empty v-else :image="simpleEmptyImage" description="暂无路由" />
+                <a-empty v-else :image="simpleEmptyImage" description="No routes" />
 
                 <div class="mini-form">
                   <a-input
@@ -250,24 +266,24 @@
                     placeholder="10.10.0.1"
                     @update:value="emit('update:route-form', 'via', $event)"
                   />
-                  <a-button type="primary" @click="emit('create-route')">新增路由</a-button>
+                  <a-button type="primary" @click="emit('create-route')">Add Route</a-button>
                 </div>
               </article>
 
               <article class="panel-card">
                 <div class="panel-card__header">
-                  <h3>IP 池</h3>
+                  <h3>IP Pools</h3>
                 </div>
                 <div v-if="pools.length" class="stack-list">
                   <div v-for="pool in pools" :key="pool.id" class="stack-item">
                     <div>
                       <strong>{{ pool.ipRangeStart }} - {{ pool.ipRangeEnd }}</strong>
-                      <span>{{ pool.providerManaged ? 'Provider 管理' : '本地管理' }}</span>
+                      <span>{{ pool.providerManaged ? 'Provider managed' : 'Local managed' }}</span>
                     </div>
-                    <a-button size="small" danger @click="emit('delete-pool', pool.id)">删除</a-button>
+                    <a-button size="small" danger @click="emit('delete-pool', pool.id)">Delete</a-button>
                   </div>
                 </div>
-                <a-empty v-else :image="simpleEmptyImage" description="暂无 IP 池" />
+                <a-empty v-else :image="simpleEmptyImage" description="No IP pools" />
 
                 <div class="mini-form mini-form--triple">
                   <a-input
@@ -280,7 +296,7 @@
                     placeholder="10.10.0.200"
                     @update:value="emit('update:pool-form', 'ipRangeEnd', $event)"
                   />
-                  <a-button type="primary" @click="emit('create-pool')">新增 IP 池</a-button>
+                  <a-button type="primary" @click="emit('create-pool')">Add IP Pool</a-button>
                 </div>
               </article>
             </div>
@@ -290,7 +306,7 @@
             <div class="content-split">
               <article class="panel-card">
                 <div class="panel-card__header">
-                  <h3>DNS 配置</h3>
+                  <h3>DNS Config</h3>
                 </div>
                 <div class="form-grid">
                   <a-input
@@ -307,27 +323,27 @@
                     :checked="dnsForm.providerManaged"
                     @update:checked="emit('update:dns-form', 'providerManaged', $event)"
                   >
-                    Provider 管理
+                    Provider managed
                   </a-checkbox>
-                  <a-button type="primary" @click="emit('save-dns')">保存 DNS</a-button>
+                  <a-button type="primary" @click="emit('save-dns')">Save DNS</a-button>
                 </div>
               </article>
 
               <article class="panel-card">
                 <div class="panel-card__header">
-                  <h3>当前生效值</h3>
+                  <h3>Current Values</h3>
                 </div>
                 <div class="definition-list">
                   <div>
-                    <span>域名</span>
-                    <strong>{{ dnsConfig?.domain || '未设置' }}</strong>
+                    <span>Domain</span>
+                    <strong>{{ dnsConfig?.domain || 'Not set' }}</strong>
                   </div>
                   <div>
-                    <span>服务器</span>
-                    <strong>{{ dnsConfig?.servers.join(', ') || '未设置' }}</strong>
+                    <span>Servers</span>
+                    <strong>{{ dnsConfig?.servers.join(', ') || 'Not set' }}</strong>
                   </div>
                   <div>
-                    <span>来源</span>
+                    <span>Source</span>
                     <strong>{{ dnsConfig?.providerManaged ? 'Provider' : 'Local' }}</strong>
                   </div>
                 </div>
@@ -353,7 +369,7 @@
               <div class="panel-card__header">
                 <h3>{{ placeholderTitles[networkTab as PlaceholderTabKey] }}</h3>
               </div>
-              <p>这一栏先把版式占位对齐到原型，后续再接实际网关、ACL 和协议策略接口。</p>
+              <p>This area is reserved for future gateway, ACL, and protocol controls.</p>
             </article>
           </div>
         </template>
@@ -361,7 +377,7 @@
         <a-empty
           v-else
           :image="simpleEmptyImage"
-          description="先创建一个网络，或者从总览中选中已有网络"
+          description="Create a network first, or select one from the dashboard"
         />
       </div>
     </div>
@@ -373,10 +389,24 @@ import { h } from 'vue';
 import { ApiOutlined, DeploymentUnitOutlined, SyncOutlined } from '@ant-design/icons-vue';
 import { Empty } from 'ant-design-vue';
 
-import type { DetailMetric, NetworkTabKey, PlaceholderTabKey, PrototypeSectionKey, SectionNavItem, SyncCardModel } from '../../types';
+import type {
+  DetailMetric,
+  NetworkTabKey,
+  PlaceholderTabKey,
+  PrototypeSectionKey,
+  SectionNavItem,
+  SyncCardModel
+} from '../../types';
 import { placeholderTitles, prototypeSections } from '../../constants';
 import { parseIpAssignments, parseTags, statusColor } from '../../utils';
-import type { DnsConfig, IpPoolItem, Member, NetworkDetail, NetworkProviderBinding, RouteItem } from '../../../../api/types';
+import type {
+  DnsConfig,
+  IpPoolItem,
+  Member,
+  NetworkDetail,
+  NetworkProviderBinding,
+  RouteItem
+} from '../../../../api/types';
 import WorkspaceRail from '../WorkspaceRail.vue';
 
 const simpleEmptyImage = Empty.PRESENTED_IMAGE_SIMPLE;
@@ -396,6 +426,7 @@ defineProps<{
   pools: IpPoolItem[];
   dnsConfig: DnsConfig | null;
   syncCards: SyncCardModel[];
+  deleteLoading: boolean;
   routeForm: {
     target: string;
     via: string;
@@ -420,6 +451,7 @@ const emit = defineEmits<{
   'open-easy-setup': [];
   'sync-members': [];
   'sync-config': [];
+  'delete-network': [];
   'update:member-ip': [memberId: string, value: string];
   'toggle-auth': [member: Member];
   'assign-ip': [member: Member];

@@ -58,6 +58,7 @@ function createAdminConsoleState() {
   const authLoading = ref(false);
   const refreshing = ref(false);
   const createLoading = ref(false);
+  const deleteLoading = ref(false);
   const easySetupLoading = ref(false);
   const createModalOpen = ref(false);
   const easySetupModalOpen = ref(false);
@@ -86,7 +87,7 @@ function createAdminConsoleState() {
   });
 
   const createForm = reactive<CreateNetworkFormState>({
-    name: '主家庭网络',
+    name: 'Home Network',
     provider: 'ZeroTier',
     cidr: '10.10.0.0/16',
     private: true,
@@ -153,7 +154,7 @@ function createAdminConsoleState() {
 
   const recentAudits = computed(() => audits.value.slice(0, 5));
   const formattedLastAudit = computed(() =>
-    summary.value?.lastAuditAt ? formatTime(summary.value.lastAuditAt) : '暂无记录'
+    summary.value?.lastAuditAt ? formatTime(summary.value.lastAuditAt) : 'No records yet'
   );
   const userLabel = computed(() => user.value?.username ?? 'admin');
 
@@ -161,30 +162,30 @@ function createAdminConsoleState() {
     const data = summary.value;
     return [
       {
-        label: '家庭网络',
+        label: 'Networks',
         value: data?.networkCount ?? 0,
-        meta: '已创建网络数',
+        meta: 'Created networks',
         icon: ApartmentOutlined,
         tone: 'blue'
       },
       {
-        label: '已注册设备',
+        label: 'Registered Devices',
         value: data?.memberCount ?? 0,
-        meta: `在线 ${data?.onlineMemberCount ?? 0}`,
+        meta: `Online ${data?.onlineMemberCount ?? 0}`,
         icon: DeploymentUnitOutlined,
         tone: 'cyan'
       },
       {
-        label: '网关节点',
+        label: 'Gateways',
         value: selectedNetwork.value?.gatewayCount ?? 0,
-        meta: '来自当前主网络',
+        meta: 'For the selected network',
         icon: ApiOutlined,
         tone: 'violet'
       },
       {
-        label: '策略规则',
+        label: 'Policies',
         value: data?.routeCount ?? 0,
-        meta: `IP 池 ${data?.ipPoolCount ?? 0}`,
+        meta: `IP Pools ${data?.ipPoolCount ?? 0}`,
         icon: DashboardOutlined,
         tone: 'purple'
       }
@@ -202,31 +203,31 @@ function createAdminConsoleState() {
     return [
       {
         key: 'health',
-        label: '平台健康',
+        label: 'Platform Health',
         value: healthStatus.value?.status ?? 'Unknown',
         tone: 'blue',
-        note: healthStatus.value?.checkedAt ? `最近检查 ${formatTime(healthStatus.value.checkedAt, 'time')}` : '等待健康检查'
+        note: healthStatus.value?.checkedAt ? `Last checked ${formatTime(healthStatus.value.checkedAt, 'time')}` : 'Waiting for health check'
       },
       {
         key: 'provider',
-        label: '协议 Provider',
+        label: 'Protocol Provider',
         value: activeProvider,
         tone: 'cyan',
-        note: `${healthyProviders}/${totalProviders} 可用`
+        note: `${healthyProviders}/${totalProviders} 鍙敤`
       },
       {
         key: 'authorization',
-        label: '成员授权',
+        label: 'Member Authorization',
         value: totalMembers ? `${authorizedMembers}/${totalMembers}` : '0/0',
         tone: 'violet',
-        note: totalMembers ? '已授权成员数' : '等待设备接入'
+        note: totalMembers ? 'Authorized member count' : 'Waiting for device access'
       },
       {
         key: 'sync',
-        label: '同步状态',
-        value: syncIssues ? `${syncIssues} 项异常` : '运行正常',
+        label: 'Sync Status',
+        value: syncIssues ? `${syncIssues} issues` : 'Normal',
         tone: 'purple',
-        note: syncIssues ? '建议前往家庭网络页处理' : '当前没有待处理异常'
+        note: syncIssues ? 'Please review the network page for details' : 'No sync issues right now'
       }
     ];
   });
@@ -238,28 +239,28 @@ function createAdminConsoleState() {
     }
 
     return [
-      { label: '成员设备', value: network.memberCount, meta: `在线 ${network.onlineMemberCount}` },
-      { label: '网关节点', value: network.gatewayCount, meta: '当前网络' },
-      { label: '路由规则', value: network.routeCount, meta: `Provider ${selectedBinding.value?.provider ?? '-'}` },
-      { label: '同步状态', value: memberSyncStates.value.length + configSyncStates.value.length, meta: '最近任务记录' }
+      { label: 'Member Devices', value: network.memberCount, meta: `Online ${network.onlineMemberCount}` },
+      { label: 'Gateways', value: network.gatewayCount, meta: 'Current network' },
+      { label: 'Routes', value: network.routeCount, meta: `Provider ${selectedBinding.value?.provider ?? '-'}` },
+      { label: 'Sync Tasks', value: memberSyncStates.value.length + configSyncStates.value.length, meta: 'Recent jobs' }
     ];
   });
 
   const syncCards = computed<SyncCardModel[]>(() => {
     const memberCards = memberSyncStates.value.map((state) => ({
       key: `member-${state.id}`,
-      title: `${state.provider} 成员同步`,
+      title: `${state.provider} member sync`,
       status: state.status,
-      message: state.lastError || '成员同步状态正常。',
-      time: state.lastSyncAt ? formatTime(state.lastSyncAt) : '尚未同步'
+      message: state.lastError || 'Member sync looks healthy.',
+      time: state.lastSyncAt ? formatTime(state.lastSyncAt) : 'Not synced yet'
     }));
 
     const configCards = configSyncStates.value.map((state) => ({
       key: `config-${state.id}`,
-      title: `${state.provider} 配置同步`,
+      title: `${state.provider} config sync`,
       status: state.status,
-      message: state.lastError || '配置同步状态正常。',
-      time: state.lastSyncAt ? formatTime(state.lastSyncAt) : '尚未同步'
+      message: state.lastError || 'Config sync looks healthy.',
+      time: state.lastSyncAt ? formatTime(state.lastSyncAt) : 'Not synced yet'
     }));
 
     return [...memberCards, ...configCards];
@@ -273,11 +274,11 @@ function createAdminConsoleState() {
 
     return {
       status: unhealthy.status,
-      message: `${unhealthy.providerName} 当前状态为 ${unhealthy.status}${unhealthy.message ? `：${unhealthy.message}` : ''}`
+      message: `${unhealthy.providerName} status is ${unhealthy.status}${unhealthy.message ? `: ${unhealthy.message}` : ''}`
     };
   });
 
-  const accessNetworkName = computed(() => selectedNetwork.value?.name || '未选择网络');
+  const accessNetworkName = computed(() => selectedNetwork.value?.name || 'No network selected');
   const accessCode = computed(() => {
     const networkId = selectedNetworkId.value || 'hmnet-preview';
     const tag = accessForm.label.trim() || 'client';
@@ -300,14 +301,14 @@ function createAdminConsoleState() {
         key: 'zerotier',
         badge: 'ZT',
         title: 'ZeroTier',
-        stage: zeroTierHealthy ? '已连接' : '异常',
+        stage: zeroTierHealthy ? 'Connected' : 'Issue',
         description: zeroTierHealthy
-          ? '当前控制台已接入的协议 Provider，网络创建和成员同步都走这一条链路。'
-          : '当前控制台已接入 ZeroTier，但需要先修复连接状态后再继续网络同步与配置下发。',
+          ? 'The active control plane is connected to the real provider path for network creation and member sync.'
+          : 'ZeroTier is configured, but the connection must be fixed before sync and config push can continue.',
         status: zeroTier?.status ?? 'Unknown',
         controlPlane: zeroTier?.message || 'global.zerotier.com',
         networkId: activeBinding?.provider === 'ZeroTier' ? activeBinding.providerNetworkId : '-',
-        actionLabel: '管理配置',
+        actionLabel: 'Manage Config',
         actionType: 'primary',
         disabled: false,
         tone: 'gold',
@@ -317,12 +318,12 @@ function createAdminConsoleState() {
         key: 'wireguard',
         badge: 'WG',
         title: 'WireGuard',
-        stage: '预留',
-        description: '这里先把版式和演进位准备好，等后端 Provider 接上之后直接落进去。',
+        stage: 'Reserved',
+        description: 'Reserved layout for a future WireGuard provider integration.',
         status: 'Planned',
         controlPlane: 'Reserved',
         networkId: '-',
-        actionLabel: '了解更多',
+        actionLabel: 'Learn More',
         actionType: 'default',
         disabled: true,
         tone: 'purple',
@@ -332,12 +333,12 @@ function createAdminConsoleState() {
         key: 'quic',
         badge: 'QC',
         title: 'Custom QUIC',
-        stage: '规划',
-        description: '预留给更低时延和更细粒度控制的后续协议层实现。',
+        stage: 'Planned',
+        description: 'Reserved for a lower-latency custom QUIC protocol layer in a later phase.',
         status: 'Planned',
         controlPlane: 'Reserved',
         networkId: '-',
-        actionLabel: '了解更多',
+        actionLabel: 'Learn More',
         actionType: 'default',
         disabled: true,
         tone: 'blue',
@@ -372,7 +373,7 @@ function createAdminConsoleState() {
       }
     } catch (error) {
       authMode.value = 'login';
-      handleError(error, '读取登录状态失败');
+      handleError(error, 'Failed to read auth status');
     }
   }
 
@@ -387,7 +388,7 @@ function createAdminConsoleState() {
 
   async function submitAuth() {
     if (!authForm.username.trim() || !authForm.password.trim()) {
-      message.warning('请输入用户名和密码。');
+      message.warning('Please enter a username and password.');
       return;
     }
 
@@ -402,7 +403,7 @@ function createAdminConsoleState() {
           })
         });
 
-        message.success('管理员已创建，请直接登录。');
+        message.success('Administrator created. Please sign in.');
         authMode.value = 'login';
         authForm.password = '';
         return;
@@ -421,7 +422,7 @@ function createAdminConsoleState() {
       authForm.password = '';
       await refreshAll();
     } catch (error) {
-      handleError(error, authMode.value === 'setup' ? '初始化失败' : '登录失败');
+      handleError(error, authMode.value === 'setup' ? 'Initialization failed' : 'Login failed');
     } finally {
       authLoading.value = false;
     }
@@ -432,9 +433,9 @@ function createAdminConsoleState() {
       await request('/api/auth/logout', { method: 'POST' });
       user.value = null;
       authMode.value = 'login';
-      message.success('已退出登录。');
+      message.success('Signed out.');
     } catch (error) {
-      handleError(error, '退出失败');
+      handleError(error, 'Logout failed');
     }
   }
 
@@ -469,7 +470,7 @@ function createAdminConsoleState() {
         clearSelectedNetwork();
       }
     } catch (error) {
-      handleError(error, '刷新控制台失败');
+      handleError(error, 'Failed to refresh console data');
     } finally {
       refreshing.value = false;
     }
@@ -497,7 +498,7 @@ function createAdminConsoleState() {
       networkProviderNames[networkId] = detail.providerBindings[0]?.provider ?? '-';
       hydrateNetworkForms();
     } catch (error) {
-      handleError(error, '读取网络详情失败');
+      handleError(error, 'Failed to load network details');
     }
   }
 
@@ -544,7 +545,7 @@ function createAdminConsoleState() {
 
   async function createNetwork() {
     if (!createForm.name.trim()) {
-      message.warning('请输入网络名称。');
+      message.warning('Please enter a network name.');
       return;
     }
 
@@ -564,11 +565,33 @@ function createAdminConsoleState() {
       createModalOpen.value = false;
       selectedNetworkId.value = created.id;
       await refreshAll();
-      message.success(`网络 ${created.name} 已创建。`);
+      message.success(`Network ${created.name} created.`);
     } catch (error) {
-      handleError(error, '创建网络失败');
+      handleError(error, 'Failed to create network');
     } finally {
       createLoading.value = false;
+    }
+  }
+
+  async function deleteNetwork() {
+    if (!selectedNetworkId.value || !selectedNetwork.value) {
+      message.warning('Please select a network to delete.');
+      return;
+    }
+
+    deleteLoading.value = true;
+    try {
+      const networkName = selectedNetwork.value.name;
+      await request(`/api/networks/${selectedNetworkId.value}`, {
+        method: 'DELETE'
+      });
+
+      await refreshAll();
+      message.success(`Network ${networkName} deleted.`);
+    } catch (error) {
+      handleError(error, 'Failed to delete network');
+    } finally {
+      deleteLoading.value = false;
     }
   }
 
@@ -578,7 +601,7 @@ function createAdminConsoleState() {
 
   function downloadPlantFile() {
     if (!selectedNetworkId.value) {
-      message.warning('请先选择网络。');
+      message.warning('Please select a network first.');
       return;
     }
     window.open(buildPlantFileUrl(selectedNetworkId.value), '_blank', 'noopener');
@@ -586,7 +609,7 @@ function createAdminConsoleState() {
 
   async function applyEasySetup() {
     if (!selectedNetworkId.value) {
-      message.warning('请先选择网络。');
+      message.warning('Please select a network first.');
       return;
     }
 
@@ -608,9 +631,9 @@ function createAdminConsoleState() {
       easySetupModalOpen.value = false;
       await loadSelectedNetwork(selectedNetworkId.value);
       await loadAudits();
-      message.success('Easy Setup 已应用。');
+      message.success('Easy Setup applied.');
     } catch (error) {
-      handleError(error, 'Easy Setup 失败');
+      handleError(error, 'Easy Setup failed');
     } finally {
       easySetupLoading.value = false;
     }
@@ -618,11 +641,11 @@ function createAdminConsoleState() {
 
   async function createRoute() {
     if (!selectedNetworkId.value) {
-      message.warning('请先选择网络。');
+      message.warning('Please select a network first.');
       return;
     }
     if (!routeForm.target.trim()) {
-      message.warning('请输入路由目标 CIDR。');
+      message.warning('Please enter a target CIDR.');
       return;
     }
 
@@ -642,9 +665,9 @@ function createAdminConsoleState() {
       routeForm.via = '';
       await loadSelectedNetwork(selectedNetworkId.value);
       await loadAudits();
-      message.success('路由已新增。');
+      message.success('Route added.');
     } catch (error) {
-      handleError(error, '新增路由失败');
+      handleError(error, 'Failed to add route');
     }
   }
 
@@ -656,19 +679,19 @@ function createAdminConsoleState() {
       await request(`/api/networks/${selectedNetworkId.value}/routes/${routeId}`, { method: 'DELETE' });
       await loadSelectedNetwork(selectedNetworkId.value);
       await loadAudits();
-      message.success('路由已删除。');
+      message.success('Route deleted.');
     } catch (error) {
-      handleError(error, '删除路由失败');
+      handleError(error, 'Failed to delete route');
     }
   }
 
   async function createPool() {
     if (!selectedNetworkId.value) {
-      message.warning('请先选择网络。');
+      message.warning('Please select a network first.');
       return;
     }
     if (!poolForm.ipRangeStart.trim() || !poolForm.ipRangeEnd.trim()) {
-      message.warning('请填写起始和结束 IP。');
+      message.warning('Please enter both start and end IP addresses.');
       return;
     }
 
@@ -684,9 +707,9 @@ function createAdminConsoleState() {
 
       await loadSelectedNetwork(selectedNetworkId.value);
       await loadAudits();
-      message.success('IP 池已新增。');
+      message.success('IP pool added.');
     } catch (error) {
-      handleError(error, '新增 IP 池失败');
+      handleError(error, 'Failed to add IP pool');
     }
   }
 
@@ -698,15 +721,15 @@ function createAdminConsoleState() {
       await request(`/api/networks/${selectedNetworkId.value}/ip-pools/${poolId}`, { method: 'DELETE' });
       await loadSelectedNetwork(selectedNetworkId.value);
       await loadAudits();
-      message.success('IP 池已删除。');
+      message.success('IP pool deleted.');
     } catch (error) {
-      handleError(error, '删除 IP 池失败');
+      handleError(error, 'Failed to delete IP pool');
     }
   }
 
   async function saveDns() {
     if (!selectedNetworkId.value) {
-      message.warning('请先选择网络。');
+      message.warning('Please select a network first.');
       return;
     }
     try {
@@ -721,15 +744,15 @@ function createAdminConsoleState() {
 
       await loadSelectedNetwork(selectedNetworkId.value);
       await loadAudits();
-      message.success('DNS 已保存。');
+      message.success('DNS saved.');
     } catch (error) {
-      handleError(error, '保存 DNS 失败');
+      handleError(error, 'Failed to save DNS');
     }
   }
 
   async function syncMembers() {
     if (!selectedNetworkId.value) {
-      message.warning('请先选择网络。');
+      message.warning('Please select a network first.');
       return;
     }
     try {
@@ -739,15 +762,15 @@ function createAdminConsoleState() {
       await loadSelectedNetwork(selectedNetworkId.value);
       await loadAudits();
       networkTab.value = 'sync';
-      message.success(`${result.provider} 成员同步完成。`);
+      message.success(`${result.provider} member sync completed.`);
     } catch (error) {
-      handleError(error, '同步成员失败');
+      handleError(error, 'Failed to sync members');
     }
   }
 
   async function syncConfig() {
     if (!selectedNetworkId.value) {
-      message.warning('请先选择网络。');
+      message.warning('Please select a network first.');
       return;
     }
     try {
@@ -757,9 +780,9 @@ function createAdminConsoleState() {
       await loadSelectedNetwork(selectedNetworkId.value);
       await loadAudits();
       networkTab.value = 'sync';
-      message.success(`${result.provider} 配置同步完成。`);
+      message.success(`${result.provider} config sync completed.`);
     } catch (error) {
-      handleError(error, '同步配置失败');
+      handleError(error, 'Failed to sync config');
     }
   }
 
@@ -774,9 +797,9 @@ function createAdminConsoleState() {
       );
       await loadSelectedNetwork(selectedNetworkId.value);
       await loadAudits();
-      message.success(`${member.name || member.providerMemberId} 已更新授权状态。`);
+      message.success(`${member.name || member.providerMemberId} authorization updated.`);
     } catch (error) {
-      handleError(error, '更新成员授权失败');
+      handleError(error, 'Failed to update member authorization');
     }
   }
 
@@ -794,9 +817,9 @@ function createAdminConsoleState() {
 
       await loadSelectedNetwork(selectedNetworkId.value);
       await loadAudits();
-      message.success(`${member.name || member.providerMemberId} 的虚拟 IP 已保存。`);
+      message.success(`${member.name || member.providerMemberId} IP assignments saved.`);
     } catch (error) {
-      handleError(error, '保存虚拟 IP 失败');
+      handleError(error, 'Failed to save member IP assignments');
     }
   }
 
@@ -804,21 +827,21 @@ function createAdminConsoleState() {
     try {
       audits.value = await request<AuditLog[]>('/api/audit-logs');
     } catch (error) {
-      handleError(error, '读取审计日志失败');
+      handleError(error, 'Failed to load audit logs');
     }
   }
 
   function generateAccessArtifact() {
     inviteVersion.value = Date.now();
-    message.info('邀请码和预览二维码已刷新。plant 文件下载仍然走真实后端接口。');
+    message.info('Access code and QR preview refreshed. Plant file download still uses the live backend endpoint.');
   }
 
   async function copyAccessCode() {
     try {
       await navigator.clipboard.writeText(accessCode.value);
-      message.success('邀请码已复制。');
+      message.success('Access code copied.');
     } catch {
-      message.warning('当前环境不支持自动复制，请手动复制邀请码。');
+      message.warning('Clipboard is not available in this environment. Please copy the access code manually.');
     }
   }
 
@@ -885,7 +908,7 @@ function createAdminConsoleState() {
   }
 
   function handleError(error: unknown, fallback: string) {
-    message.error(`${fallback}：${friendlyError(error)}`);
+    message.error(`${fallback}: ${friendlyError(error)}`);
   }
 
   return {
@@ -900,6 +923,8 @@ function createAdminConsoleState() {
     createForm,
     createLoading,
     createModalOpen,
+    deleteLoading,
+    deleteNetwork,
     deletePool,
     deleteRoute,
     detailMetrics,
