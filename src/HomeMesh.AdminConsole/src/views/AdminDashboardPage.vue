@@ -4,12 +4,13 @@
     :nav-items="prototypeNavItems"
     :metrics="summaryMetrics"
     :networks="networks"
-    :status-items="dashboardStatusItems"
+    :recent-audits="recentAudits"
     :provider-names="networkProviderNames"
     :show-rail="false"
     @navigate="navigateToSection"
     @open-create="createModalOpen = true"
     @open-network="openNetworkSection"
+    @refresh-audits="loadAudits"
   />
 </template>
 
@@ -25,10 +26,11 @@ const router = useRouter();
 
 const {
   createModalOpen,
-  dashboardStatusItems,
+  loadAudits,
   networkProviderNames,
   networks,
   openNetwork,
+  recentAudits,
   summaryMetrics
 } = useAdminConsole();
 

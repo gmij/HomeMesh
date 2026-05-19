@@ -141,62 +141,85 @@
           </div>
 
           <div v-else-if="networkTab === 'members'" class="network-pane">
-            <div v-if="members.length" class="table-wrap">
-              <table class="prototype-table prototype-table--members">
-                <thead>
-                  <tr>
-                    <th>设备</th>
-                    <th>角色</th>
-                    <th>虚拟 IP</th>
-                    <th>授权</th>
-                    <th>在线</th>
-                    <th>标签</th>
-                    <th>操作</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="member in members" :key="member.id">
-                    <td>
-                      <div class="member-cell">
-                        <strong>{{ member.name || member.providerMemberId }}</strong>
-                        <span>{{ member.providerMemberId }}</span>
-                      </div>
-                    </td>
-                    <td>{{ member.role }}</td>
-                    <td class="ip-cell">
-                      <a-input
-                        :value="memberIpValues[member.id] ?? parseIpAssignments(member.ipAssignmentsJson).join(', ')"
-                        size="small"
-                        placeholder="10.10.0.20"
-                        @update:value="emit('update:member-ip', member.id, $event)"
-                        @pressEnter="emit('assign-ip', member)"
-                      />
-                    </td>
-                    <td>
-                      <a-tag :color="member.authorized ? 'green' : 'orange'">
-                        {{ member.authorized ? '已授权' : '待授权' }}
-                      </a-tag>
-                    </td>
-                    <td>
-                      <span class="online-dot" :class="{ offline: !member.online }"></span>
-                      {{ member.online ? '在线' : '离线' }}
-                    </td>
-                    <td>{{ parseTags(member.tagsJson).join(', ') || '-' }}</td>
-                    <td>
-                      <div class="row-actions">
-                        <a-button size="small" type="link" @click="emit('toggle-auth', member)">
-                          {{ member.authorized ? '拒绝' : '授权' }}
-                        </a-button>
-                        <a-button size="small" type="link" @click="emit('assign-ip', member)">
-                          保存 IP
-                        </a-button>
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            <a-empty v-else :image="simpleEmptyImage" description="所选网络还没有成员" />
+            <article class="panel-card panel-card--table">
+              <div class="panel-card__header panel-card__header--table">
+                <div>
+                  <h3>成员清单</h3>
+                  <span>{{ members.length ? `共 ${members.length} 台设备` : '等待成员接入' }}</span>
+                </div>
+                <div class="inline-actions">
+                  <a-button size="small" @click="emit('sync-members')">同步成员</a-button>
+                  <a-button size="small" type="primary" ghost @click="emit('navigate', prototypeSections.access)">
+                    设备接入
+                  </a-button>
+                </div>
+              </div>
+
+              <div class="table-wrap">
+                <table class="prototype-table prototype-table--members">
+                  <thead>
+                    <tr>
+                      <th>设备</th>
+                      <th>角色</th>
+                      <th>虚拟 IP</th>
+                      <th>授权</th>
+                      <th>在线</th>
+                      <th>标签</th>
+                      <th>操作</th>
+                    </tr>
+                  </thead>
+                  <tbody v-if="members.length">
+                    <tr v-for="member in members" :key="member.id">
+                      <td>
+                        <div class="member-cell">
+                          <strong>{{ member.name || member.providerMemberId }}</strong>
+                          <span>{{ member.providerMemberId }}</span>
+                        </div>
+                      </td>
+                      <td>{{ member.role }}</td>
+                      <td class="ip-cell">
+                        <a-input
+                          :value="memberIpValues[member.id] ?? parseIpAssignments(member.ipAssignmentsJson).join(', ')"
+                          size="small"
+                          placeholder="10.10.0.20"
+                          @update:value="emit('update:member-ip', member.id, $event)"
+                          @pressEnter="emit('assign-ip', member)"
+                        />
+                      </td>
+                      <td>
+                        <a-tag :color="member.authorized ? 'green' : 'orange'">
+                          {{ member.authorized ? '已授权' : '待授权' }}
+                        </a-tag>
+                      </td>
+                      <td>
+                        <span class="online-dot" :class="{ offline: !member.online }"></span>
+                        {{ member.online ? '在线' : '离线' }}
+                      </td>
+                      <td>{{ parseTags(member.tagsJson).join(', ') || '-' }}</td>
+                      <td>
+                        <div class="row-actions">
+                          <a-button size="small" type="link" @click="emit('toggle-auth', member)">
+                            {{ member.authorized ? '拒绝' : '授权' }}
+                          </a-button>
+                          <a-button size="small" type="link" @click="emit('assign-ip', member)">
+                            保存 IP
+                          </a-button>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                  <tbody v-else>
+                    <tr>
+                      <td colspan="7" class="table-empty-cell">
+                        <div class="table-empty-state">
+                          <a-empty :image="simpleEmptyImage" description="当前网络还没有成员设备" />
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </article>
           </div>
 
           <div v-else-if="networkTab === 'routes'" class="network-pane">

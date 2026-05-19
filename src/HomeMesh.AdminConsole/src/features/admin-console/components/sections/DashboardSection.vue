@@ -77,23 +77,22 @@
             <a-empty v-else :image="simpleEmptyImage" description="还没有创建网络" />
           </article>
 
-          <article class="panel-card panel-card--status">
+          <article class="panel-card">
             <div class="panel-card__header">
-              <h3>控制台状态</h3>
-              <a-button type="link" @click="emit('navigate', prototypeSections.providers)">查看 Provider</a-button>
+              <h3>最近事件</h3>
+              <a-button type="link" @click="emit('refresh-audits')">更新列表</a-button>
             </div>
 
-            <div class="status-list">
-              <div v-for="item in statusItems" :key="item.key" class="status-item">
-                <div class="stat-icon" :class="`tone-${item.tone}`">
-                  <span class="status-pill">{{ item.label }}</span>
-                </div>
-                <div class="status-copy">
-                  <strong>{{ item.value }}</strong>
-                  <span>{{ item.note }}</span>
+            <div v-if="recentAudits.length" class="event-list">
+              <div v-for="audit in recentAudits" :key="audit.id" class="event-item">
+                <div class="event-time">{{ formatTime(audit.createdAt, 'time') }}</div>
+                <div class="event-copy">
+                  <strong>{{ audit.message }}</strong>
+                  <span>{{ audit.actor || 'system' }}</span>
                 </div>
               </div>
             </div>
+            <a-empty v-else :image="simpleEmptyImage" description="最近还没有新的事件" />
           </article>
         </div>
       </div>
@@ -107,9 +106,9 @@ import { BellOutlined, PlusOutlined } from '@ant-design/icons-vue';
 import { Empty } from 'ant-design-vue';
 
 import { prototypeSections } from '../../constants';
-import type { NetworkSummary } from '../../../../api/types';
-import type { DashboardStatusItem, PrototypeSectionKey, SectionNavItem, SummaryMetric } from '../../types';
-import { statusColor } from '../../utils';
+import type { AuditLog, NetworkSummary } from '../../../../api/types';
+import type { PrototypeSectionKey, SectionNavItem, SummaryMetric } from '../../types';
+import { formatTime, statusColor } from '../../utils';
 import WorkspaceRail from '../WorkspaceRail.vue';
 
 const simpleEmptyImage = Empty.PRESENTED_IMAGE_SIMPLE;
@@ -119,7 +118,7 @@ const props = defineProps<{
   navItems: SectionNavItem[];
   metrics: SummaryMetric[];
   networks: NetworkSummary[];
-  statusItems: DashboardStatusItem[];
+  recentAudits: AuditLog[];
   providerNames: Record<string, string>;
   showRail?: boolean;
 }>();
@@ -128,6 +127,7 @@ const emit = defineEmits<{
   navigate: [key: PrototypeSectionKey];
   'open-create': [];
   'open-network': [networkId: string];
+  'refresh-audits': [];
 }>();
 
 function providerForNetwork(networkId: string) {
