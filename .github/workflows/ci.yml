@@ -29,8 +29,12 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
-      - name: Show .NET info
-        run: dotnet --info
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: src/HomeMesh.AdminConsole/package-lock.json
 
       - name: Restore
         run: dotnet restore HomeMesh.sln --verbosity minimal
@@ -39,4 +43,7 @@ jobs:
         run: dotnet build HomeMesh.sln --configuration Release --no-restore --verbosity minimal
 
       - name: Test
-        run: dotnet test tests/HomeMesh.Tests/HomeMesh.Tests.csproj --configuration Release --no-restore --verbosity normal
+        run: dotnet test tests/HomeMesh.Tests/HomeMesh.Tests.csproj --configuration Release --no-build --no-restore --verbosity normal
+
+      - name: Verify publish package
+        run: dotnet publish src/HomeMesh.WebApi/HomeMesh.WebApi.csproj --configuration Release --output artifacts/publish/webapi --no-build --no-restore --verbosity minimal

@@ -104,7 +104,8 @@ RUN chmod +x /usr/local/bin/mkworld
 # 创建运行时所需目录
 RUN mkdir -p /app/dist /app/config /app/data /app/homemesh /var/lib/zerotier-one
 
-# 拷贝 HomeMesh WebApi 发布产物（由宿主机 build.ps1 预先构建）
+# 发布前先执行 dotnet publish，产物输出到 artifacts/publish/webapi
+# 拷贝 HomeMesh WebApi 发布产物
 COPY artifacts/publish/webapi /app/homemesh/
 
 # 拷贝 entrypoint（planet 初始化 + HomeMesh WebApi 启动）
