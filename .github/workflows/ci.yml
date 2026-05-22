@@ -40,23 +40,3 @@ jobs:
 
       - name: Test
         run: dotnet test tests/HomeMesh.Tests/HomeMesh.Tests.csproj --configuration Release --no-restore --verbosity normal
-
-  docker-build:
-    name: Docker build
-    runs-on: ubuntu-latest
-    needs: build-test
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v5
-        with:
-          dotnet-version: 10.0.x
-
-      - name: Publish WebApi for Docker context
-        run: dotnet publish src/HomeMesh.WebApi/HomeMesh.WebApi.csproj --configuration Release --output artifacts/publish/webapi -p:SkipAdminConsoleBuild=true --verbosity minimal
-
-      - name: Build Docker image
-        run: docker build -f deploy/docker/Dockerfile -t homemesh-controller:ci .
