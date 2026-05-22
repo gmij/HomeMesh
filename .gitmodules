@@ -1,0 +1,4 @@
+[submodule "deploy/docker/zt-sparse"]
+	path = deploy/docker/zt-sparse
+	url = https://github.com/zerotier/ZeroTierOne.git
+	branch = 1.12.2
