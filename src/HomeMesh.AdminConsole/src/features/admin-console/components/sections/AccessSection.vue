@@ -3,8 +3,8 @@
     <div class="section-heading">
       <div class="heading-badge">3</div>
       <div class="heading-copy">
-        <h2>设备接入</h2>
-        <p>生成邀请码、下载接入文件，并为终端准备扫码入口。</p>
+        <h2>{{ $t('access.title') }}</h2>
+        <p>{{ $t('access.description') }}</p>
       </div>
       <div class="section-tools">
         <a-button
@@ -13,7 +13,14 @@
           :disabled="!selectedNetworkId"
           @click="emit('download-plant-file')"
         >
-          下载接入文件
+          {{ $t('access.download_planet_button') }}
+        </a-button>
+        <a-button
+          :icon="h(DownloadOutlined)"
+          :disabled="!selectedNetworkId"
+          @click="emit('download-moon-file')"
+        >
+          {{ $t('access.download_moon_button') }}
         </a-button>
       </div>
     </div>
@@ -30,39 +37,42 @@
         <div class="content-split content-split--tight">
           <article class="panel-card panel-card--invite">
             <div class="panel-card__header">
-              <h3>生成设备邀请码</h3>
-              <span>为 Windows、Android、Linux 终端准备接入凭证</span>
+              <h3>{{ $t('access.invite_section') }}</h3>
+              <span>{{ $t('access.invite_meta') }}</span>
             </div>
 
             <div class="form-grid">
               <a-select
                 :value="selectedNetworkId"
                 :options="networkOptions"
-                placeholder="加入网络"
-                @update:value="emit('update:selected-network-id', $event)"
+                :placeholder="$t('access.network_placeholder')"
+                @update:value="onNetworkChange"
               />
               <a-select
                 :value="accessForm.expiryDays"
                 :options="expiryOptions"
-                @update:value="emit('update:access-form', 'expiryDays', $event)"
+                @update:value="onExpiryChange"
               />
               <a-input
                 :value="accessForm.label"
-                placeholder="例如：手机、工作站、IoT"
+                :placeholder="$t('access.device_placeholder')"
                 @update:value="emit('update:access-form', 'label', $event)"
               />
               <a-checkbox
                 :checked="accessForm.autoApprove"
                 @update:checked="emit('update:access-form', 'autoApprove', $event)"
               >
-                自动授权
+                {{ $t('access.auto_approve') }}
               </a-checkbox>
               <div class="inline-actions">
                 <a-button type="primary" @click="emit('generate-access-artifact')">
-                  生成邀请码
+                  {{ $t('access.generate_code') }}
                 </a-button>
                 <a-button :disabled="!selectedNetworkId" @click="emit('download-plant-file')">
-                  下载接入文件
+                  {{ $t('access.download_planet_button') }}
+                </a-button>
+                <a-button :disabled="!selectedNetworkId" @click="emit('download-moon-file')">
+                  {{ $t('access.download_moon_button') }}
                 </a-button>
               </div>
             </div>
@@ -70,8 +80,8 @@
 
           <article class="panel-card panel-card--qr">
             <div class="panel-card__header">
-              <h3>扫码接入</h3>
-              <span>邀请码与二维码同步刷新</span>
+              <h3>{{ $t('access.qr_section') }}</h3>
+              <span>{{ $t('access.qr_meta') }}</span>
             </div>
 
             <div class="qr-shell">
@@ -90,7 +100,7 @@
                   <code>{{ accessCode }}</code>
                   <a-button size="small" :icon="h(CopyOutlined)" @click="emit('copy-access-code')" />
                 </div>
-                <p>支持 Windows / Android / Linux 客户端</p>
+                <p>{{ $t('access.qr_platforms') }}</p>
               </div>
             </div>
           </article>
@@ -131,6 +141,27 @@ const emit = defineEmits<{
   'update:access-form': [field: 'expiryDays' | 'label' | 'autoApprove', value: string | boolean];
   'generate-access-artifact': [];
   'download-plant-file': [];
+  'download-moon-file': [];
   'copy-access-code': [];
 }>();
+
+function onNetworkChange(value: unknown) {
+  emit('update:selected-network-id', normalizeSelectValue(value));
+}
+
+function onExpiryChange(value: unknown) {
+  emit('update:access-form', 'expiryDays', normalizeSelectValue(value));
+}
+
+function normalizeSelectValue(value: unknown) {
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  if (typeof value === 'number') {
+    return String(value);
+  }
+
+  return '';
+}
 </script>

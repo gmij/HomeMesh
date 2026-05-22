@@ -7,50 +7,50 @@
           <span></span>
         </div>
         <div>
-          <div class="hero-title">HomeMesh</div>
-          <div class="hero-subtitle">Home SD-WAN Controller</div>
+          <div class="hero-title">{{ $t('hero.title') }}</div>
+          <div class="hero-subtitle">{{ $t('hero.subtitle') }}</div>
         </div>
       </div>
 
       <div class="auth-copy">
-        <h1>{{ mode === 'setup' ? '初始化管理员账户' : '登录管理控制台' }}</h1>
+        <h1>{{ mode === 'setup' ? $t('auth.setup_title') : $t('auth.login_title') }}</h1>
         <p>
           {{
             mode === 'setup'
-              ? '先创建第一位管理员，我们再把控制台接起来。'
-              : '输入管理员账号，进入新的 Vue 控制台。'
+              ? $t('auth.setup_description')
+              : $t('auth.login_description')
           }}
         </p>
       </div>
 
       <a-form layout="vertical" class="auth-form" @submit.prevent="emit('submit')">
-        <a-form-item label="用户名">
+        <a-form-item :label="$t('auth.username_label')">
           <a-input
             :value="username"
             size="large"
-            placeholder="admin"
+            :placeholder="$t('auth.username_placeholder')"
             @update:value="emit('update:username', $event)"
             @pressEnter="emit('submit')"
           />
         </a-form-item>
-        <a-form-item label="密码">
+        <a-form-item :label="$t('auth.password_label')">
           <a-input-password
             :value="password"
             size="large"
-            placeholder="请输入密码"
+            :placeholder="$t('auth.password_placeholder')"
             @update:value="emit('update:password', $event)"
             @pressEnter="emit('submit')"
           />
         </a-form-item>
         <a-button type="primary" size="large" block :loading="loading" @click="emit('submit')">
-          {{ mode === 'setup' ? '创建管理员' : '登录' }}
+          {{ mode === 'setup' ? $t('auth.setup_button') : $t('auth.login_button') }}
         </a-button>
       </a-form>
 
       <div class="auth-footnote">
-        <span>当前健康状态</span>
-        <a-tag :color="healthStatus === 'Healthy' ? 'green' : 'default'">
-          {{ healthStatus ?? '等待检测' }}
+        <span>{{ $t('auth.health_status_label') }}</span>
+        <a-tag :color="healthTagColor">
+          {{ localizedHealthStatus }}
         </a-tag>
       </div>
     </a-card>
@@ -58,9 +58,11 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import type { AuthMode } from '../types';
 
-defineProps<{
+const props = defineProps<{
   mode: AuthMode;
   username: string;
   password: string;
@@ -73,4 +75,27 @@ const emit = defineEmits<{
   'update:password': [value: string];
   submit: [];
 }>();
+
+const { t } = useI18n();
+
+const statusKeyMap: Record<string, string> = {
+  healthy: 'auth.health_status_healthy',
+  degraded: 'auth.health_status_degraded',
+  unhealthy: 'auth.health_status_unhealthy',
+  unknown: 'auth.health_status_unknown'
+};
+
+const localizedHealthStatus = computed(() => {
+  const raw = props.healthStatus;
+  if (!raw) {
+    return t('auth.health_status_waiting');
+  }
+
+  const key = statusKeyMap[raw.trim().toLowerCase()];
+  return key ? t(key) : raw;
+});
+
+const healthTagColor = computed(() => {
+  return props.healthStatus?.trim().toLowerCase() === 'healthy' ? 'green' : 'default';
+});
 </script>

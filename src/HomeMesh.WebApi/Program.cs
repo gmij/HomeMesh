@@ -1,4 +1,3 @@
-using HomeMesh.Abstractions.Providers;
 using HomeMesh.Application;
 using HomeMesh.Application.Auth;
 using HomeMesh.Application.Setup;
@@ -135,28 +134,7 @@ app.MapPost("/api/setup/admin", async (SetupAdminRequest request, SetupService s
     }
 });
 
-app.MapGet("/api/providers", async (IEnumerable<ISdwanControllerProvider> providers, CancellationToken cancellationToken) =>
-{
-    var statuses = new List<ProviderHealthStatus>();
-    foreach (var provider in providers)
-    {
-        statuses.Add(await provider.GetStatusAsync(cancellationToken));
-    }
-
-    return Results.Ok(statuses);
-});
-
-app.MapGet("/api/providers/{providerName}/status", async (string providerName, IEnumerable<ISdwanControllerProvider> providers, CancellationToken cancellationToken) =>
-{
-    var provider = providers.FirstOrDefault(x => string.Equals(x.ProviderName, providerName, StringComparison.OrdinalIgnoreCase));
-    if (provider is null)
-    {
-        return Results.NotFound(new { error = $"Provider '{providerName}' was not found." });
-    }
-
-    return Results.Ok(await provider.GetStatusAsync(cancellationToken));
-});
-
+app.MapProviderEndpoints();
 app.MapNetworkEndpoints();
 app.MapNetworkConfigEndpoints();
 app.MapMemberEndpoints();

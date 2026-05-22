@@ -73,7 +73,29 @@ public sealed class ZeroTierLocalApiClient(
         using var request = await CreateRequestAsync(HttpMethod.Get, $"/controller/network/{networkId}/member", cancellationToken);
         using var response = await httpClient.SendAsync(request, cancellationToken);
         response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<List<string>>(JsonOptions, cancellationToken) ?? [];
+        var raw = await response.Content.ReadAsStringAsync(cancellationToken);
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            return [];
+        }
+
+        using var json = JsonDocument.Parse(raw);
+        return json.RootElement.ValueKind switch
+        {
+            JsonValueKind.Array => json.RootElement
+                .EnumerateArray()
+                .Where(x => x.ValueKind == JsonValueKind.String)
+                .Select(x => x.GetString())
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(x => x!)
+                .ToArray(),
+            JsonValueKind.Object => json.RootElement
+                .EnumerateObject()
+                .Select(x => x.Name)
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .ToArray(),
+            _ => []
+        };
     }
 
     public async Task<ZeroTierMember?> GetMemberAsync(string networkId, string memberId, CancellationToken cancellationToken = default)
@@ -111,7 +133,7 @@ public sealed class ZeroTierLocalApiClient(
 
     private async Task<HttpRequestMessage> CreateRequestAsync(HttpMethod method, string path, CancellationToken cancellationToken)
     {
-        var baseUrl = _options.ApiBaseUrl.TrimEnd('/');
+        var baseUrl = $"http://127.0.0.1:{_options.Port}";
         var request = new HttpRequestMessage(method, baseUrl + path);
         var token = await ReadTokenAsync(cancellationToken);
         request.Headers.TryAddWithoutValidation("X-ZT1-Auth", token);

@@ -5,7 +5,7 @@
     :show-rail="false"
     :selected-network-id="selectedNetworkId"
     :network-options="networkSelectOptions"
-    :expiry-options="accessExpiryOptions"
+    :expiry-options="translatedExpiryOptions"
     :access-form="accessForm"
     :access-network-name="accessNetworkName"
     :access-code="accessCode"
@@ -15,12 +15,15 @@
     @update:access-form="updateAccessForm"
     @generate-access-artifact="generateAccessArtifact"
     @download-plant-file="downloadPlantFile"
+    @download-moon-file="downloadMoonFile"
     @copy-access-code="copyAccessCode"
   />
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 
 import AccessSection from '../features/admin-console/components/sections/AccessSection.vue';
 import {
@@ -33,12 +36,18 @@ import { useAdminConsole } from '../features/admin-console/composables/useAdminC
 import type { PrototypeSectionKey } from '../features/admin-console/types';
 
 const router = useRouter();
+const { t } = useI18n();
+
+const translatedExpiryOptions = computed(() =>
+  accessExpiryOptions.map(opt => ({ ...opt, label: t(opt.label) }))
+);
 
 const {
   accessCode,
   accessForm,
   accessNetworkName,
   copyAccessCode,
+  downloadMoonFile,
   downloadPlantFile,
   generateAccessArtifact,
   networkSelectOptions,

@@ -7,11 +7,13 @@ export const prototypeSections = {
   providers: 'providers'
 } as const;
 
+// Navigation items now use i18n keys instead of hard-coded labels
+// Update the labels in component using useI18n() composable
 export const prototypeNavItems: SectionNavItem[] = [
-  { key: prototypeSections.dashboard, label: '总览', index: 1 },
-  { key: prototypeSections.network, label: '家庭网络', index: 2 },
-  { key: prototypeSections.access, label: '设备接入', index: 3 },
-  { key: prototypeSections.providers, label: '协议 Provider', index: 4 }
+  { key: prototypeSections.dashboard, label: 'nav.dashboard', index: 1 },
+  { key: prototypeSections.network, label: 'nav.network', index: 2 },
+  { key: prototypeSections.access, label: 'nav.access', index: 3 },
+  { key: prototypeSections.providers, label: 'nav.providers', index: 4 }
 ];
 
 export const sectionPathMap: Record<SectionNavItem['key'], string> = {
@@ -21,14 +23,16 @@ export const sectionPathMap: Record<SectionNavItem['key'], string> = {
   providers: '/providers'
 };
 
+// Placeholder titles now use i18n keys
 export const placeholderTitles: Record<PlaceholderTabKey, string> = {
-  gateway: '网关节点',
-  acl: '访问控制',
-  protocol: '协议配置'
+  gateway: 'network.tabs.gateway',
+  acl: 'network.tabs.acl',
+  protocol: 'network.tabs.protocol'
 };
 
+// Access expiry options now use i18n keys
 export const accessExpiryOptions = [
-  { label: '1 天', value: '1' },
-  { label: '7 天', value: '7' },
-  { label: '30 天', value: '30' }
+  { label: 'access.expiry_1d', value: '1' },
+  { label: 'access.expiry_7d', value: '7' },
+  { label: 'access.expiry_30d', value: '30' }
 ];

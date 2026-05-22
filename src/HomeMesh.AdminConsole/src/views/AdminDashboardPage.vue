@@ -36,7 +36,7 @@ const {
 
 function openNetworkSection(networkId: string) {
   openNetwork(networkId);
-  navigateToSection('network');
+  void router.push({ name: 'admin-network-detail', params: { networkId } });
 }
 
 function navigateToSection(key: PrototypeSectionKey) {

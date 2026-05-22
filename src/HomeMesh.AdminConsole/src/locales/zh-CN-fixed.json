@@ -1,0 +1,208 @@
+﻿{
+  "nav": {
+    "dashboard": "总览",
+    "network": "家庭网络",
+    "access": "设备接入",
+    "providers": "协议 Provider"
+  },
+  "secondary_nav": {
+    "devices": "设备管理",
+    "policy": "访问策略",
+    "settings": "系统设置"
+  },
+  "auth": {
+    "setup_title": "初始化管理员账户",
+    "setup_description": "先创建第一位管理员，我们再把控制台接起来。",
+    "login_title": "登录管理控制台",
+    "login_description": "输入管理员账号，进入新的 Vue 控制台。",
+    "username_label": "用户名",
+    "password_label": "密码",
+    "username_placeholder": "admin",
+    "password_placeholder": "请输入密码",
+    "setup_button": "创建管理员",
+    "login_button": "登录",
+    "health_status_label": "当前健康状态",
+    "health_status_waiting": "等待检测"
+  },
+  "dashboard": {
+    "title": "总览",
+    "description": "网络、设备、网关与同步概况集中在一屏里。",
+      "no_events": "最近还没有新的事件",
+    "metrics": {
+      "networks": "网络数量",
+      "networks_meta": "已创建的网络",
+      "devices": "已注册设备",
+      "devices_meta": "在线 {count} 个",
+      "gateways": "网关",
+      "gateways_meta": "当前网络中",
+      "policies": "策略",
+      "policies_meta": "IP 池 {count} 个"
+    },
+    "status": {
+      "health": "平台健康状态",
+      "provider": "协议 Provider",
+      "provider_meta": "{healthy}/{total} 可用",
+      "authorization": "成员授权",
+      "authorization_meta": "已授权成员数量",
+      "sync": "同步状态",
+      "sync_issues": "{count} 个问题",
+      "sync_meta": "请查看网络页面了解详情"
+    },
+    "networks_section": "网络列表",
+    "networks_link": "打开网络区",
+    "no_networks": "还没有创建网络",
+    "recent_events": "最近事件",
+    "refresh_events": "更新列表",
+    "table_headers": {
+      "name": "网络名称",
+      "provider": "Provider",
+      "cidr": "CIDR",
+      "status": "状态"
+    }
+  },
+  "network": {
+    "title": "家庭网络",
+    "description": "配置家庭网络、路由、DNS 和成员。",
+    "tabs": {
+      "overview": "概览",
+      "members": "成员",
+      "routes": "路由",
+      "dns": "DNS",
+      "sync": "同步",
+      "gateway": "网关节点",
+      "acl": "访问控制",
+      "protocol": "协议配置"
+    },
+    "breadcrumb": "网络",
+    "last_audit": "最后审计: {time}",
+    "info_labels": {
+      "homemesh_id": "HomeMesh ID",
+      "provider": "Provider",
+      "provider_network_id": "Provider 网络 ID",
+      "cidr": "CIDR"
+    },
+    "auto_assigned": "自动分配",
+    "detail_metrics": {
+      "members": "成员设备",
+      "gateways": "网关",
+      "routes": "路由",
+      "sync_tasks": "同步任务"
+    },
+    "provider_bindings": "Provider 绑定",
+    "policy": "策略",
+    "auto_approve_members": "自动批准成员",
+    "auto_assign_ip": "自动分配 IP",
+    "network_mode": "网络模式",
+    "private_mode": "私密",
+    "public_mode": "公开",
+    "enabled": "启用",
+    "disabled": "禁用",
+    "members_section": "成员",
+    "members_count": "{count} 个设备",
+    "waiting_for_members": "等待成员加入",
+    "sync_members_button": "同步成员",
+    "device_access_button": "设备接入",
+    "table_headers": {
+      "device": "设备",
+      "role": "角色",
+      "virtual_ip": "虚拟 IP",
+      "auth": "授权",
+      "online": "在线",
+      "tags": "标签",
+      "actions": "操作"
+    },
+    "authorized": "已授权",
+    "pending": "待审批",
+    "routes_section": "路由",
+    "dns_section": "DNS",
+    "gateway_section": "网关",
+    "actions": {
+      "sync_members": "同步成员",
+      "sync_config": "同步配置",
+      "delete": "删除网络",
+      "confirm_delete": "确定要删除此网络吗？",
+      "confirm_delete_desc": "这将删除 HomeMesh 网络、Provider 绑定和相关配置。此操作无法撤销。",
+      "confirm_ok": "删除",
+      "confirm_cancel": "取消"
+    }
+  },
+  "access": {
+    "title": "设备接入",
+    "description": "生成邀请码、下载接入文件，并为终端准备扫码入口。",
+    "download_file": "下载接入文件",
+    "invite_section": "生成设备邀请码",
+    "invite_meta": "为 Windows、Android、Linux 终端准备接入凭证",
+    "network_placeholder": "加入网络",
+    "device_placeholder": "例如：手机、工作站、IoT",
+    "auto_approve": "自动授权",
+    "generate_code": "生成邀请码",
+    "download_file_button": "下载接入文件",
+    "qr_section": "扫码接入",
+    "qr_meta": "邀请码与二维码同步刷新",
+    "qr_platforms": "支持 Windows / Android / Linux 客户端",
+    "copy_code": "复制",
+    "expiry_1d": "1 天",
+    "expiry_7d": "7 天",
+    "expiry_30d": "30 天"
+  },
+  "providers": {
+    "title": "协议 Provider",
+    "description": "当前启用中的 Provider 与后续规划统一放在这里。",
+    "intro": "当前已接入与规划中的协议能力，都在这里统一查看。",
+    "refresh": "刷新 Provider",
+    "status_label": "状态",
+    "control_plane_label": "控制平面",
+    "network_id_label": "网络 ID"
+  },
+  "modals": {
+    "create_network": {
+      "title": "创建家庭网络",
+      "ok_text": "创建",
+      "cancel_text": "取消",
+      "name_label": "网络名称",
+      "name_placeholder": "主家庭网络",
+      "provider_label": "Provider",
+      "cidr_label": "CIDR",
+      "cidr_placeholder": "10.10.0.0/16",
+      "private_label": "Private 网络",
+      "auto_approve_label": "自动批准成员"
+    },
+    "easy_setup": {
+      "title": "Easy Setup",
+      "ok_text": "应用",
+      "cancel_text": "取消",
+      "cidr_label": "CIDR",
+      "cidr_placeholder": "10.10.0.0/16",
+      "pool_start_label": "IP Pool Start",
+      "pool_start_placeholder": "10.10.0.10",
+      "pool_end_label": "IP Pool End",
+      "pool_end_placeholder": "10.10.0.200",
+      "dns_domain_label": "DNS Domain",
+      "dns_domain_placeholder": "home.arpa",
+      "dns_servers_label": "DNS Servers",
+      "dns_servers_placeholder": "1.1.1.1, 8.8.8.8",
+      "auto_assign_label": "自动分配 IP",
+      "auto_approve_label": "自动批准成员"
+    }
+  },
+  "buttons": {
+    "notification": "通知",
+    "create_network": "新建网络",
+    "refresh": "刷新",
+    "logout": "退出登录"
+  },
+  "hero": {
+    "title": "HomeMesh",
+    "subtitle": "Home SD-WAN Controller",
+    "tagline": "面向家庭与小型办公场景的 SD-WAN 控制台"
+  },
+  "common": {
+    "no_records": "暂无记录",
+    "unknown": "未知",
+    "waiting": "等待中...",
+    "loading": "加载中...",
+    "error": "错误",
+    "success": "成功"
+  }
+}
+

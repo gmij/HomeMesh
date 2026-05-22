@@ -1,10 +1,11 @@
 import { createRouter, createWebHistory } from 'vue-router';
 
-import AdminAccessPage from '../views/AdminAccessPage.vue';
-import AdminConsoleLayout from '../views/AdminConsoleLayout.vue';
-import AdminDashboardPage from '../views/AdminDashboardPage.vue';
-import AdminNetworkPage from '../views/AdminNetworkPage.vue';
-import AdminProvidersPage from '../views/AdminProvidersPage.vue';
+const AdminAccessPage = () => import('../views/AdminAccessPage.vue');
+const AdminConsoleLayout = () => import('../views/AdminConsoleLayout.vue');
+const AdminDashboardPage = () => import('../views/AdminDashboardPage.vue');
+const AdminNetworkDetailPage = () => import('../views/AdminNetworkDetailPage.vue');
+const AdminNetworkPage = () => import('../views/AdminNetworkPage.vue');
+const AdminProvidersPage = () => import('../views/AdminProvidersPage.vue');
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -29,6 +30,14 @@ const router = createRouter({
           path: 'network',
           name: 'admin-network',
           component: AdminNetworkPage,
+          meta: {
+            section: 'network'
+          }
+        },
+        {
+          path: 'network/:networkId',
+          name: 'admin-network-detail',
+          component: AdminNetworkDetailPage,
           meta: {
             section: 'network'
           }

@@ -3,16 +3,16 @@
     <div class="section-heading">
       <div class="heading-badge">2</div>
       <div class="heading-copy">
-        <h2>Networks</h2>
-        <p>Manage member access, network settings, and sync activity from one place.</p>
+        <h2>{{ $t('network.title') }}</h2>
+        <p>{{ $t('network.description') }}</p>
       </div>
       <div class="section-tools">
         <a-select
           :value="selectedNetworkId"
           class="network-switcher"
           :options="networkOptions"
-          placeholder="Select network"
-          @update:value="emit('update:selected-network-id', $event)"
+          :placeholder="$t('network.select_placeholder')"
+          @update:value="onNetworkChange"
         />
         <a-button
           type="primary"
@@ -20,28 +20,28 @@
           :disabled="!selectedNetworkId"
           @click="emit('open-easy-setup')"
         >
-          Easy Setup
+          {{ $t('network.actions.easy_setup') }}
         </a-button>
-        <a-button :icon="h(SyncOutlined)" :disabled="!selectedNetworkId" @click="emit('sync-members')">
-          Sync Members
+        <a-button :icon="h(ReloadOutlined)" :disabled="!selectedNetworkId" @click="emit('sync-members')">
+          {{ $t('network.actions.sync_members') }}
         </a-button>
         <a-button
           :icon="h(DeploymentUnitOutlined)"
           :disabled="!selectedNetworkId"
           @click="emit('sync-config')"
         >
-          Sync Config
+          {{ $t('network.actions.sync_config') }}
         </a-button>
         <a-popconfirm
-          title="Delete this network?"
-          description="This removes the HomeMesh network, provider binding, and related config. This cannot be undone."
-          ok-text="Delete"
-          cancel-text="Cancel"
+          :title="$t('network.actions.confirm_delete')"
+          :description="$t('network.actions.confirm_delete_desc')"
+          :ok-text="$t('network.actions.confirm_ok')"
+          :cancel-text="$t('network.actions.confirm_cancel')"
           :disabled="!selectedNetworkId"
           @confirm="emit('delete-network')"
         >
           <a-button :disabled="!selectedNetworkId" :loading="deleteLoading" danger>
-            Delete Network
+            {{ $t('network.actions.delete') }}
           </a-button>
         </a-popconfirm>
       </div>
@@ -59,10 +59,10 @@
         <template v-if="selectedNetwork">
           <div class="network-topbar">
             <div>
-              <div class="crumb-line">Networks &gt; {{ selectedNetwork.name }}</div>
+              <div class="crumb-line">{{ $t('network.breadcrumb') }} &gt; {{ selectedNetwork.name }}</div>
               <h3>{{ selectedNetwork.name }}</h3>
             </div>
-            <div class="toolbar-note">Last audit: {{ formattedLastAudit }}</div>
+            <div class="toolbar-note">{{ $t('network.last_audit', { time: formattedLastAudit }) }}</div>
           </div>
 
           <a-tabs
@@ -70,32 +70,32 @@
             class="network-tabs"
             @update:activeKey="emit('update:network-tab', $event as NetworkTabKey)"
           >
-            <a-tab-pane key="overview" tab="Overview" />
-            <a-tab-pane key="members" tab="Members" />
-            <a-tab-pane key="routes" tab="Routes" />
-            <a-tab-pane key="dns" tab="DNS" />
-            <a-tab-pane key="sync" tab="Sync" />
-            <a-tab-pane key="gateway" tab="Gateway" />
-            <a-tab-pane key="acl" tab="ACL" />
-            <a-tab-pane key="protocol" tab="Protocol" />
+            <a-tab-pane key="overview" :tab="$t('network.tabs.overview')" />
+            <a-tab-pane key="members" :tab="$t('network.tabs.members')" />
+            <a-tab-pane key="routes" :tab="$t('network.tabs.routes')" />
+            <a-tab-pane key="dns" :tab="$t('network.tabs.dns')" />
+            <a-tab-pane key="sync" :tab="$t('network.tabs.sync')" />
+            <a-tab-pane key="gateway" :tab="$t('network.tabs.gateway')" />
+            <a-tab-pane key="acl" :tab="$t('network.tabs.acl')" />
+            <a-tab-pane key="protocol" :tab="$t('network.tabs.protocol')" />
           </a-tabs>
 
           <div class="info-strip">
             <div class="info-item">
-              <span>HomeMesh ID</span>
+              <span>{{ $t('network.info_labels.homemesh_id') }}</span>
               <strong>{{ selectedNetwork.id }}</strong>
             </div>
             <div class="info-item">
-              <span>Provider</span>
+              <span>{{ $t('network.info_labels.provider') }}</span>
               <strong>{{ selectedBinding?.provider ?? '-' }}</strong>
             </div>
             <div class="info-item">
-              <span>Provider Network ID</span>
+              <span>{{ $t('network.info_labels.provider_network_id') }}</span>
               <strong>{{ selectedBinding?.providerNetworkId ?? '-' }}</strong>
             </div>
             <div class="info-item">
-              <span>CIDR</span>
-              <strong>{{ selectedNetwork.cidr ?? 'Auto assigned' }}</strong>
+              <span>{{ $t('network.info_labels.cidr') }}</span>
+              <strong>{{ selectedNetwork.cidr ?? $t('network.auto_assigned') }}</strong>
             </div>
           </div>
 
@@ -111,7 +111,7 @@
             <div class="content-split">
               <article class="panel-card">
                 <div class="panel-card__header">
-                  <h3>Provider Bindings</h3>
+                  <h3>{{ $t('network.provider_bindings') }}</h3>
                 </div>
                 <div class="binding-list">
                   <div
@@ -124,7 +124,7 @@
                       <span>{{ binding.providerNetworkId }}</span>
                     </div>
                     <a-tag :color="binding.isPrimary ? 'blue' : 'default'">
-                      {{ binding.isPrimary ? 'Primary' : 'Secondary' }}
+                      {{ binding.isPrimary ? $t('network.binding_primary') : $t('network.binding_secondary') }}
                     </a-tag>
                   </div>
                 </div>
@@ -132,23 +132,23 @@
 
               <article class="panel-card">
                 <div class="panel-card__header">
-                  <h3>Policy</h3>
+                  <h3>{{ $t('network.policy') }}</h3>
                 </div>
                 <div class="policy-grid">
                   <div class="policy-item">
-                    <span>Auto approve members</span>
-                    <strong>{{ selectedNetwork.autoApproveMembers ? 'Enabled' : 'Disabled' }}</strong>
+                    <span>{{ $t('network.auto_approve_members') }}</span>
+                    <strong>{{ selectedNetwork.autoApproveMembers ? $t('network.enabled') : $t('network.disabled') }}</strong>
                   </div>
                   <div class="policy-item">
-                    <span>Auto assign IP</span>
-                    <strong>{{ selectedNetwork.v4AssignMode ? 'Enabled' : 'Disabled' }}</strong>
+                    <span>{{ $t('network.auto_assign_ip') }}</span>
+                    <strong>{{ selectedNetwork.v4AssignMode ? $t('network.enabled') : $t('network.disabled') }}</strong>
                   </div>
                   <div class="policy-item">
-                    <span>Network mode</span>
-                    <strong>{{ selectedNetwork.private ? 'Private' : 'Public' }}</strong>
+                    <span>{{ $t('network.network_mode') }}</span>
+                    <strong>{{ selectedNetwork.private ? $t('network.private_mode') : $t('network.public_mode') }}</strong>
                   </div>
                   <div class="policy-item">
-                    <span>Status</span>
+                    <span>{{ $t('network.status_label') }}</span>
                     <strong>{{ selectedNetwork.status }}</strong>
                   </div>
                 </div>
@@ -160,13 +160,13 @@
             <article class="panel-card panel-card--table">
               <div class="panel-card__header panel-card__header--table">
                 <div>
-                  <h3>Members</h3>
-                  <span>{{ members.length ? `${members.length} devices` : 'Waiting for members to join' }}</span>
+                  <h3>{{ $t('network.members_section') }}</h3>
+                  <span>{{ members.length ? $t('network.members_count', { count: members.length }) : $t('network.waiting_for_members') }}</span>
                 </div>
                 <div class="inline-actions">
-                  <a-button size="small" @click="emit('sync-members')">Sync Members</a-button>
+                  <a-button size="small" :icon="h(ReloadOutlined)" @click="emit('sync-members')">{{ $t('network.sync_members_button') }}</a-button>
                   <a-button size="small" type="primary" ghost @click="emit('navigate', prototypeSections.access)">
-                    Device Access
+                    {{ $t('network.device_access_button') }}
                   </a-button>
                 </div>
               </div>
@@ -175,13 +175,13 @@
                 <table class="prototype-table prototype-table--members">
                   <thead>
                     <tr>
-                      <th>Device</th>
-                      <th>Role</th>
-                      <th>Virtual IP</th>
-                      <th>Auth</th>
-                      <th>Online</th>
-                      <th>Tags</th>
-                      <th>Actions</th>
+                      <th>{{ $t('network.table_headers.device') }}</th>
+                      <th>{{ $t('network.table_headers.role') }}</th>
+                      <th>{{ $t('network.table_headers.virtual_ip') }}</th>
+                      <th>{{ $t('network.table_headers.auth') }}</th>
+                      <th>{{ $t('network.table_headers.online') }}</th>
+                      <th>{{ $t('network.table_headers.tags') }}</th>
+                      <th>{{ $t('network.table_headers.actions') }}</th>
                     </tr>
                   </thead>
                   <tbody v-if="members.length">
@@ -197,28 +197,28 @@
                         <a-input
                           :value="memberIpValues[member.id] ?? parseIpAssignments(member.ipAssignmentsJson).join(', ')"
                           size="small"
-                          placeholder="10.10.0.20"
+                          :placeholder="$t('network.member_ip_placeholder')"
                           @update:value="emit('update:member-ip', member.id, $event)"
                           @pressEnter="emit('assign-ip', member)"
                         />
                       </td>
                       <td>
                         <a-tag :color="member.authorized ? 'green' : 'orange'">
-                          {{ member.authorized ? 'Authorized' : 'Pending' }}
+                          {{ member.authorized ? $t('network.authorized') : $t('network.pending') }}
                         </a-tag>
                       </td>
                       <td>
                         <span class="online-dot" :class="{ offline: !member.online }"></span>
-                        {{ member.online ? 'Online' : 'Offline' }}
+                        {{ member.online ? $t('network.online') : $t('network.offline') }}
                       </td>
                       <td>{{ parseTags(member.tagsJson).join(', ') || '-' }}</td>
                       <td>
                         <div class="row-actions">
                           <a-button size="small" type="link" @click="emit('toggle-auth', member)">
-                            {{ member.authorized ? 'Revoke' : 'Authorize' }}
+                            {{ member.authorized ? $t('network.revoke') : $t('network.authorize') }}
                           </a-button>
                           <a-button size="small" type="link" @click="emit('assign-ip', member)">
-                            Save IP
+                            {{ $t('network.save_ip') }}
                           </a-button>
                         </div>
                       </td>
@@ -228,7 +228,7 @@
                     <tr>
                       <td colspan="7" class="table-empty-cell">
                         <div class="table-empty-state">
-                          <a-empty :image="simpleEmptyImage" description="No member devices yet" />
+                          <a-empty :image="simpleEmptyImage" :description="$t('network.no_member_devices')" />
                         </div>
                       </td>
                     </tr>
@@ -242,61 +242,61 @@
             <div class="content-split">
               <article class="panel-card">
                 <div class="panel-card__header">
-                  <h3>Routes</h3>
+                  <h3>{{ $t('network.routes_section') }}</h3>
                 </div>
                 <div v-if="routes.length" class="stack-list">
                   <div v-for="route in routes" :key="route.id" class="stack-item">
                     <div>
                       <strong>{{ route.target }}</strong>
-                      <span>{{ route.type }} / {{ route.via || 'provider managed' }}</span>
+                      <span>{{ route.type }} / {{ route.via || $t('network.provider_managed') }}</span>
                     </div>
-                    <a-button size="small" danger @click="emit('delete-route', route.id)">Delete</a-button>
+                    <a-button size="small" danger @click="emit('delete-route', route.id)">{{ $t('network.delete') }}</a-button>
                   </div>
                 </div>
-                <a-empty v-else :image="simpleEmptyImage" description="No routes" />
+                <a-empty v-else :image="simpleEmptyImage" :description="$t('network.no_routes')" />
 
                 <div class="mini-form">
                   <a-input
                     :value="routeForm.target"
-                    placeholder="192.168.50.0/24"
+                    :placeholder="$t('network.route_target_placeholder')"
                     @update:value="emit('update:route-form', 'target', $event)"
                   />
                   <a-input
                     :value="routeForm.via"
-                    placeholder="10.10.0.1"
+                    :placeholder="$t('network.route_via_placeholder')"
                     @update:value="emit('update:route-form', 'via', $event)"
                   />
-                  <a-button type="primary" @click="emit('create-route')">Add Route</a-button>
+                  <a-button type="primary" @click="emit('create-route')">{{ $t('network.add_route') }}</a-button>
                 </div>
               </article>
 
               <article class="panel-card">
                 <div class="panel-card__header">
-                  <h3>IP Pools</h3>
+                  <h3>{{ $t('network.ip_pools_section') }}</h3>
                 </div>
                 <div v-if="pools.length" class="stack-list">
                   <div v-for="pool in pools" :key="pool.id" class="stack-item">
                     <div>
                       <strong>{{ pool.ipRangeStart }} - {{ pool.ipRangeEnd }}</strong>
-                      <span>{{ pool.providerManaged ? 'Provider managed' : 'Local managed' }}</span>
+                      <span>{{ pool.providerManaged ? $t('network.provider_managed') : $t('network.local_managed') }}</span>
                     </div>
-                    <a-button size="small" danger @click="emit('delete-pool', pool.id)">Delete</a-button>
+                    <a-button size="small" danger @click="emit('delete-pool', pool.id)">{{ $t('network.delete') }}</a-button>
                   </div>
                 </div>
-                <a-empty v-else :image="simpleEmptyImage" description="No IP pools" />
+                <a-empty v-else :image="simpleEmptyImage" :description="$t('network.no_ip_pools')" />
 
                 <div class="mini-form mini-form--triple">
                   <a-input
                     :value="poolForm.ipRangeStart"
-                    placeholder="10.10.0.10"
+                    :placeholder="$t('network.pool_start_placeholder')"
                     @update:value="emit('update:pool-form', 'ipRangeStart', $event)"
                   />
                   <a-input
                     :value="poolForm.ipRangeEnd"
-                    placeholder="10.10.0.200"
+                    :placeholder="$t('network.pool_end_placeholder')"
                     @update:value="emit('update:pool-form', 'ipRangeEnd', $event)"
                   />
-                  <a-button type="primary" @click="emit('create-pool')">Add IP Pool</a-button>
+                  <a-button type="primary" @click="emit('create-pool')">{{ $t('network.add_ip_pool') }}</a-button>
                 </div>
               </article>
             </div>
@@ -306,45 +306,45 @@
             <div class="content-split">
               <article class="panel-card">
                 <div class="panel-card__header">
-                  <h3>DNS Config</h3>
+                  <h3>{{ $t('network.dns_config') }}</h3>
                 </div>
                 <div class="form-grid">
                   <a-input
                     :value="dnsForm.domain"
-                    placeholder="home.arpa"
+                    :placeholder="$t('network.dns_domain_placeholder')"
                     @update:value="emit('update:dns-form', 'domain', $event)"
                   />
                   <a-input
                     :value="dnsForm.servers"
-                    placeholder="1.1.1.1, 8.8.8.8"
+                    :placeholder="$t('network.dns_servers_placeholder')"
                     @update:value="emit('update:dns-form', 'servers', $event)"
                   />
                   <a-checkbox
                     :checked="dnsForm.providerManaged"
                     @update:checked="emit('update:dns-form', 'providerManaged', $event)"
                   >
-                    Provider managed
+                    {{ $t('network.provider_managed') }}
                   </a-checkbox>
-                  <a-button type="primary" @click="emit('save-dns')">Save DNS</a-button>
+                  <a-button type="primary" @click="emit('save-dns')">{{ $t('network.save_dns') }}</a-button>
                 </div>
               </article>
 
               <article class="panel-card">
                 <div class="panel-card__header">
-                  <h3>Current Values</h3>
+                  <h3>{{ $t('network.current_values') }}</h3>
                 </div>
                 <div class="definition-list">
                   <div>
-                    <span>Domain</span>
-                    <strong>{{ dnsConfig?.domain || 'Not set' }}</strong>
+                    <span>{{ $t('network.domain') }}</span>
+                    <strong>{{ dnsConfig?.domain || $t('network.not_set') }}</strong>
                   </div>
                   <div>
-                    <span>Servers</span>
-                    <strong>{{ dnsConfig?.servers.join(', ') || 'Not set' }}</strong>
+                    <span>{{ $t('network.servers') }}</span>
+                    <strong>{{ dnsConfig?.servers.join(', ') || $t('network.not_set') }}</strong>
                   </div>
                   <div>
-                    <span>Source</span>
-                    <strong>{{ dnsConfig?.providerManaged ? 'Provider' : 'Local' }}</strong>
+                    <span>{{ $t('network.source') }}</span>
+                    <strong>{{ dnsConfig?.providerManaged ? $t('network.provider') : $t('network.local') }}</strong>
                   </div>
                 </div>
               </article>
@@ -369,7 +369,7 @@
               <div class="panel-card__header">
                 <h3>{{ placeholderTitles[networkTab as PlaceholderTabKey] }}</h3>
               </div>
-              <p>This area is reserved for future gateway, ACL, and protocol controls.</p>
+              <p>{{ $t('network.placeholder_reserved') }}</p>
             </article>
           </div>
         </template>
@@ -377,7 +377,7 @@
         <a-empty
           v-else
           :image="simpleEmptyImage"
-          description="Create a network first, or select one from the dashboard"
+          :description="$t('network.empty_select_network')"
         />
       </div>
     </div>
@@ -386,7 +386,7 @@
 
 <script setup lang="ts">
 import { h } from 'vue';
-import { ApiOutlined, DeploymentUnitOutlined, SyncOutlined } from '@ant-design/icons-vue';
+import { ApiOutlined, DeploymentUnitOutlined, ReloadOutlined } from '@ant-design/icons-vue';
 import { Empty } from 'ant-design-vue';
 
 import type {
@@ -464,4 +464,20 @@ const emit = defineEmits<{
   'update:dns-form': [field: 'domain' | 'servers' | 'providerManaged', value: string | boolean];
   'save-dns': [];
 }>();
+
+function onNetworkChange(value: unknown) {
+  emit('update:selected-network-id', normalizeSelectValue(value));
+}
+
+function normalizeSelectValue(value: unknown) {
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  if (typeof value === 'number') {
+    return String(value);
+  }
+
+  return '';
+}
 </script>

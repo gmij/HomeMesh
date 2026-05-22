@@ -60,8 +60,10 @@ async function readError(response: Response): Promise<string> {
   }
 
   try {
-    const payload = JSON.parse(text) as { error?: string; detail?: string };
-    return [payload.error, payload.detail].filter(Boolean).join(' ') || text;
+    const payload = JSON.parse(text) as { error?: string; message?: string; detail?: string };
+    const primary = payload.error ?? payload.message;
+    const secondary = payload.detail && payload.detail !== '{}' ? payload.detail : undefined;
+    return [primary, secondary].filter(Boolean).join(' — ') || text;
   } catch {
     return text;
   }

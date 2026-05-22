@@ -7,7 +7,7 @@
       </div>
       <div>
         <strong>HomeMesh</strong>
-        <small>Home SD-WAN Controller</small>
+        <small>{{ $t('hero.subtitle') }}</small>
       </div>
     </div>
 
@@ -21,7 +21,7 @@
         @click="emit('navigate', item.key)"
       >
         <component :is="iconMap[item.key]" />
-        <span>{{ item.label }}</span>
+        <span>{{ t(item.label) }}</span>
       </button>
 
       <button
@@ -38,6 +38,8 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import {
   ApiOutlined,
   AppstoreOutlined,
@@ -59,6 +61,8 @@ const emit = defineEmits<{
   navigate: [key: PrototypeSectionKey];
 }>();
 
+const { t } = useI18n();
+
 const iconMap = {
   dashboard: DashboardOutlined,
   network: ApartmentOutlined,
@@ -66,9 +70,9 @@ const iconMap = {
   providers: ApiOutlined
 };
 
-const secondaryItems = [
-  { key: 'devices', label: '设备管理', icon: AppstoreOutlined },
-  { key: 'policy', label: '访问策略', icon: SafetyCertificateOutlined },
-  { key: 'settings', label: '系统设置', icon: SettingOutlined }
-];
+const secondaryItems = computed(() => [
+  { key: 'devices', label: t('secondary_nav.devices'), icon: AppstoreOutlined },
+  { key: 'policy', label: t('secondary_nav.policy'), icon: SafetyCertificateOutlined },
+  { key: 'settings', label: t('secondary_nav.settings'), icon: SettingOutlined }
+]);
 </script>

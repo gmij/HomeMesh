@@ -2,10 +2,10 @@
   <section class="audit-section">
     <div class="section-heading section-heading--audit">
       <div class="heading-copy">
-        <h2>审计日志</h2>
-        <p>补一条底部时间线，方便看最近操作有没有落库。</p>
+        <h2>{{ $t('audit.title') }}</h2>
+        <p>{{ $t('audit.description') }}</p>
       </div>
-      <a-button :icon="h(FileSearchOutlined)" @click="emit('refresh')">刷新日志</a-button>
+      <a-button :icon="h(FileSearchOutlined)" @click="emit('refresh')">{{ $t('audit.refresh') }}</a-button>
     </div>
 
     <article class="panel-card">
@@ -14,11 +14,11 @@
           <div class="audit-pill">{{ audit.type }}</div>
           <div class="audit-copy">
             <strong>{{ audit.message }}</strong>
-            <span>{{ audit.actor || 'system' }} · {{ formatTime(audit.createdAt) }}</span>
+            <span>{{ audit.actor || $t('audit.system_actor') }} · {{ formatTime(audit.createdAt) }}</span>
           </div>
         </div>
       </div>
-      <a-empty v-else :image="simpleEmptyImage" description="暂无审计日志" />
+      <a-empty v-else :image="simpleEmptyImage" :description="$t('audit.empty')" />
     </article>
   </section>
 </template>

@@ -1,4 +1,5 @@
 import { computed, onMounted, reactive, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { message } from 'ant-design-vue';
 import {
   ApiOutlined,
@@ -54,6 +55,8 @@ import {
 let sharedState: ReturnType<typeof createAdminConsoleState> | null = null;
 
 function createAdminConsoleState() {
+  const { t } = useI18n();
+
   const authMode = ref<AuthMode>('loading');
   const authLoading = ref(false);
   const refreshing = ref(false);
@@ -89,13 +92,13 @@ function createAdminConsoleState() {
   const createForm = reactive<CreateNetworkFormState>({
     name: 'Home Network',
     provider: 'ZeroTier',
-    cidr: '10.10.0.0/16',
+    cidr: '10.10.0.0/24',
     private: true,
     autoApproveMembers: false
   });
 
   const easySetupForm = reactive<EasySetupFormState>({
-    cidr: '10.10.0.0/16',
+    cidr: '10.10.0.0/24',
     ipPoolStart: '10.10.0.10',
     ipPoolEnd: '10.10.0.200',
     enableAutoAssign: true,
@@ -154,7 +157,7 @@ function createAdminConsoleState() {
 
   const recentAudits = computed(() => audits.value.slice(0, 5));
   const formattedLastAudit = computed(() =>
-    summary.value?.lastAuditAt ? formatTime(summary.value.lastAuditAt) : 'No records yet'
+    summary.value?.lastAuditAt ? formatTime(summary.value.lastAuditAt) : t('common.no_records')
   );
   const userLabel = computed(() => user.value?.username ?? 'admin');
 
@@ -162,30 +165,30 @@ function createAdminConsoleState() {
     const data = summary.value;
     return [
       {
-        label: 'Networks',
+        label: t('dashboard.metrics.networks'),
         value: data?.networkCount ?? 0,
-        meta: 'Created networks',
+        meta: t('dashboard.metrics.networks_meta'),
         icon: ApartmentOutlined,
         tone: 'blue'
       },
       {
-        label: 'Registered Devices',
+        label: t('dashboard.metrics.devices'),
         value: data?.memberCount ?? 0,
-        meta: `Online ${data?.onlineMemberCount ?? 0}`,
+        meta: t('dashboard.metrics.devices_meta', { count: data?.onlineMemberCount ?? 0 }),
         icon: DeploymentUnitOutlined,
         tone: 'cyan'
       },
       {
-        label: 'Gateways',
+        label: t('dashboard.metrics.gateways'),
         value: selectedNetwork.value?.gatewayCount ?? 0,
-        meta: 'For the selected network',
+        meta: t('dashboard.metrics.gateways_meta'),
         icon: ApiOutlined,
         tone: 'violet'
       },
       {
-        label: 'Policies',
+        label: t('dashboard.metrics.policies'),
         value: data?.routeCount ?? 0,
-        meta: `IP Pools ${data?.ipPoolCount ?? 0}`,
+        meta: t('dashboard.metrics.policies_meta', { count: data?.ipPoolCount ?? 0 }),
         icon: DashboardOutlined,
         tone: 'purple'
       }
@@ -203,31 +206,33 @@ function createAdminConsoleState() {
     return [
       {
         key: 'health',
-        label: 'Platform Health',
-        value: healthStatus.value?.status ?? 'Unknown',
+        label: t('dashboard.status.health'),
+        value: healthStatus.value?.status ?? t('auth.health_status_unknown'),
         tone: 'blue',
-        note: healthStatus.value?.checkedAt ? `Last checked ${formatTime(healthStatus.value.checkedAt, 'time')}` : 'Waiting for health check'
+        note: healthStatus.value?.checkedAt
+          ? t('dashboard.status.last_checked', { time: formatTime(healthStatus.value.checkedAt, 'time') })
+          : t('dashboard.status.waiting_check')
       },
       {
         key: 'provider',
-        label: 'Protocol Provider',
+        label: t('dashboard.status.provider'),
         value: activeProvider,
         tone: 'cyan',
-        note: `${healthyProviders}/${totalProviders} 鍙敤`
+        note: t('dashboard.status.provider_meta', { healthy: healthyProviders, total: totalProviders })
       },
       {
         key: 'authorization',
-        label: 'Member Authorization',
+        label: t('dashboard.status.authorization'),
         value: totalMembers ? `${authorizedMembers}/${totalMembers}` : '0/0',
         tone: 'violet',
-        note: totalMembers ? 'Authorized member count' : 'Waiting for device access'
+        note: totalMembers ? t('dashboard.status.authorization_meta') : t('dashboard.status.authorization_waiting')
       },
       {
         key: 'sync',
-        label: 'Sync Status',
-        value: syncIssues ? `${syncIssues} issues` : 'Normal',
+        label: t('dashboard.status.sync'),
+        value: syncIssues ? t('dashboard.status.sync_issues', { count: syncIssues }) : t('dashboard.status.sync_normal'),
         tone: 'purple',
-        note: syncIssues ? 'Please review the network page for details' : 'No sync issues right now'
+        note: syncIssues ? t('dashboard.status.sync_meta') : t('dashboard.status.sync_meta_ok')
       }
     ];
   });
@@ -239,28 +244,44 @@ function createAdminConsoleState() {
     }
 
     return [
-      { label: 'Member Devices', value: network.memberCount, meta: `Online ${network.onlineMemberCount}` },
-      { label: 'Gateways', value: network.gatewayCount, meta: 'Current network' },
-      { label: 'Routes', value: network.routeCount, meta: `Provider ${selectedBinding.value?.provider ?? '-'}` },
-      { label: 'Sync Tasks', value: memberSyncStates.value.length + configSyncStates.value.length, meta: 'Recent jobs' }
+      {
+        label: t('network.detail_metrics.members'),
+        value: network.memberCount,
+        meta: t('dashboard.metrics.devices_meta', { count: network.onlineMemberCount })
+      },
+      {
+        label: t('network.detail_metrics.gateways'),
+        value: network.gatewayCount,
+        meta: t('network.detail_metrics.current_network')
+      },
+      {
+        label: t('network.detail_metrics.routes'),
+        value: network.routeCount,
+        meta: t('network.detail_metrics.provider', { provider: selectedBinding.value?.provider ?? '-' })
+      },
+      {
+        label: t('network.detail_metrics.sync_tasks'),
+        value: memberSyncStates.value.length + configSyncStates.value.length,
+        meta: t('network.detail_metrics.recent_jobs')
+      }
     ];
   });
 
   const syncCards = computed<SyncCardModel[]>(() => {
     const memberCards = memberSyncStates.value.map((state) => ({
       key: `member-${state.id}`,
-      title: `${state.provider} member sync`,
+      title: t('sync.member_title', { provider: state.provider }),
       status: state.status,
-      message: state.lastError || 'Member sync looks healthy.',
-      time: state.lastSyncAt ? formatTime(state.lastSyncAt) : 'Not synced yet'
+      message: state.lastError || t('sync.member_healthy'),
+      time: state.lastSyncAt ? formatTime(state.lastSyncAt) : t('sync.not_synced')
     }));
 
     const configCards = configSyncStates.value.map((state) => ({
       key: `config-${state.id}`,
-      title: `${state.provider} config sync`,
+      title: t('sync.config_title', { provider: state.provider }),
       status: state.status,
-      message: state.lastError || 'Config sync looks healthy.',
-      time: state.lastSyncAt ? formatTime(state.lastSyncAt) : 'Not synced yet'
+      message: state.lastError || t('sync.config_healthy'),
+      time: state.lastSyncAt ? formatTime(state.lastSyncAt) : t('sync.not_synced')
     }));
 
     return [...memberCards, ...configCards];
@@ -272,13 +293,18 @@ function createAdminConsoleState() {
       return null;
     }
 
+    const detail = unhealthy.message ? `: ${unhealthy.message}` : '';
     return {
       status: unhealthy.status,
-      message: `${unhealthy.providerName} status is ${unhealthy.status}${unhealthy.message ? `: ${unhealthy.message}` : ''}`
+      message: t('providers.warning_status', {
+        provider: unhealthy.providerName,
+        status: unhealthy.status,
+        detail
+      })
     };
   });
 
-  const accessNetworkName = computed(() => selectedNetwork.value?.name || 'No network selected');
+  const accessNetworkName = computed(() => selectedNetwork.value?.name || t('access.no_network_selected'));
   const accessCode = computed(() => {
     const networkId = selectedNetworkId.value || 'hmnet-preview';
     const tag = accessForm.label.trim() || 'client';
@@ -301,14 +327,14 @@ function createAdminConsoleState() {
         key: 'zerotier',
         badge: 'ZT',
         title: 'ZeroTier',
-        stage: zeroTierHealthy ? 'Connected' : 'Issue',
+        stage: zeroTierHealthy ? t('providers.card.stage_connected') : t('providers.card.stage_issue'),
         description: zeroTierHealthy
-          ? 'The active control plane is connected to the real provider path for network creation and member sync.'
-          : 'ZeroTier is configured, but the connection must be fixed before sync and config push can continue.',
-        status: zeroTier?.status ?? 'Unknown',
+          ? t('providers.card.zerotier_connected')
+          : t('providers.card.zerotier_issue'),
+        status: zeroTier?.status ?? t('auth.health_status_unknown'),
         controlPlane: zeroTier?.message || 'global.zerotier.com',
         networkId: activeBinding?.provider === 'ZeroTier' ? activeBinding.providerNetworkId : '-',
-        actionLabel: 'Manage Config',
+        actionLabel: t('providers.card.manage_config'),
         actionType: 'primary',
         disabled: false,
         tone: 'gold',
@@ -318,12 +344,12 @@ function createAdminConsoleState() {
         key: 'wireguard',
         badge: 'WG',
         title: 'WireGuard',
-        stage: 'Reserved',
-        description: 'Reserved layout for a future WireGuard provider integration.',
-        status: 'Planned',
-        controlPlane: 'Reserved',
+        stage: t('providers.card.stage_reserved'),
+        description: t('providers.card.wireguard_reserved'),
+        status: t('providers.card.stage_planned'),
+        controlPlane: t('providers.card.stage_reserved'),
         networkId: '-',
-        actionLabel: 'Learn More',
+        actionLabel: t('providers.card.learn_more'),
         actionType: 'default',
         disabled: true,
         tone: 'purple',
@@ -333,12 +359,12 @@ function createAdminConsoleState() {
         key: 'quic',
         badge: 'QC',
         title: 'Custom QUIC',
-        stage: 'Planned',
-        description: 'Reserved for a lower-latency custom QUIC protocol layer in a later phase.',
-        status: 'Planned',
-        controlPlane: 'Reserved',
+        stage: t('providers.card.stage_planned'),
+        description: t('providers.card.quic_planned'),
+        status: t('providers.card.stage_planned'),
+        controlPlane: t('providers.card.stage_reserved'),
         networkId: '-',
-        actionLabel: 'Learn More',
+        actionLabel: t('providers.card.learn_more'),
         actionType: 'default',
         disabled: true,
         tone: 'blue',
@@ -373,7 +399,7 @@ function createAdminConsoleState() {
       }
     } catch (error) {
       authMode.value = 'login';
-      handleError(error, 'Failed to read auth status');
+      handleError(error, t('errors.read_auth_status'));
     }
   }
 
@@ -388,7 +414,7 @@ function createAdminConsoleState() {
 
   async function submitAuth() {
     if (!authForm.username.trim() || !authForm.password.trim()) {
-      message.warning('Please enter a username and password.');
+      message.warning(t('notifications.warn_enter_credentials'));
       return;
     }
 
@@ -403,7 +429,7 @@ function createAdminConsoleState() {
           })
         });
 
-        message.success('Administrator created. Please sign in.');
+        message.success(t('notifications.success_admin_created'));
         authMode.value = 'login';
         authForm.password = '';
         return;
@@ -422,7 +448,7 @@ function createAdminConsoleState() {
       authForm.password = '';
       await refreshAll();
     } catch (error) {
-      handleError(error, authMode.value === 'setup' ? 'Initialization failed' : 'Login failed');
+      handleError(error, authMode.value === 'setup' ? t('errors.initialization_failed') : t('errors.login_failed'));
     } finally {
       authLoading.value = false;
     }
@@ -433,9 +459,9 @@ function createAdminConsoleState() {
       await request('/api/auth/logout', { method: 'POST' });
       user.value = null;
       authMode.value = 'login';
-      message.success('Signed out.');
+      message.success(t('notifications.success_signed_out'));
     } catch (error) {
-      handleError(error, 'Logout failed');
+      handleError(error, t('errors.logout_failed'));
     }
   }
 
@@ -470,7 +496,7 @@ function createAdminConsoleState() {
         clearSelectedNetwork();
       }
     } catch (error) {
-      handleError(error, 'Failed to refresh console data');
+      handleError(error, t('errors.refresh_console_data'));
     } finally {
       refreshing.value = false;
     }
@@ -498,7 +524,7 @@ function createAdminConsoleState() {
       networkProviderNames[networkId] = detail.providerBindings[0]?.provider ?? '-';
       hydrateNetworkForms();
     } catch (error) {
-      handleError(error, 'Failed to load network details');
+      handleError(error, t('errors.load_network_details'));
     }
   }
 
@@ -545,7 +571,7 @@ function createAdminConsoleState() {
 
   async function createNetwork() {
     if (!createForm.name.trim()) {
-      message.warning('Please enter a network name.');
+      message.warning(t('notifications.warn_enter_network_name'));
       return;
     }
 
@@ -565,9 +591,9 @@ function createAdminConsoleState() {
       createModalOpen.value = false;
       selectedNetworkId.value = created.id;
       await refreshAll();
-      message.success(`Network ${created.name} created.`);
+      message.success(t('notifications.success_network_created', { name: created.name }));
     } catch (error) {
-      handleError(error, 'Failed to create network');
+      handleError(error, t('errors.create_network_failed'));
     } finally {
       createLoading.value = false;
     }
@@ -575,7 +601,7 @@ function createAdminConsoleState() {
 
   async function deleteNetwork() {
     if (!selectedNetworkId.value || !selectedNetwork.value) {
-      message.warning('Please select a network to delete.');
+      message.warning(t('notifications.warn_select_network_delete'));
       return;
     }
 
@@ -587,9 +613,9 @@ function createAdminConsoleState() {
       });
 
       await refreshAll();
-      message.success(`Network ${networkName} deleted.`);
+      message.success(t('notifications.success_network_deleted', { name: networkName }));
     } catch (error) {
-      handleError(error, 'Failed to delete network');
+      handleError(error, t('errors.delete_network_failed'));
     } finally {
       deleteLoading.value = false;
     }
@@ -599,17 +625,29 @@ function createAdminConsoleState() {
     return `/api/networks/${networkId}/plant-file`;
   }
 
+  function buildMoonFileUrl(networkId: string) {
+    return `/api/networks/${networkId}/moon-file`;
+  }
+
   function downloadPlantFile() {
     if (!selectedNetworkId.value) {
-      message.warning('Please select a network first.');
+      message.warning(t('notifications.warn_select_network_first'));
       return;
     }
     window.open(buildPlantFileUrl(selectedNetworkId.value), '_blank', 'noopener');
   }
 
+  function downloadMoonFile() {
+    if (!selectedNetworkId.value) {
+      message.warning(t('notifications.warn_select_network_first'));
+      return;
+    }
+    window.open(buildMoonFileUrl(selectedNetworkId.value), '_blank', 'noopener');
+  }
+
   async function applyEasySetup() {
     if (!selectedNetworkId.value) {
-      message.warning('Please select a network first.');
+      message.warning(t('notifications.warn_select_network_first'));
       return;
     }
 
@@ -631,9 +669,9 @@ function createAdminConsoleState() {
       easySetupModalOpen.value = false;
       await loadSelectedNetwork(selectedNetworkId.value);
       await loadAudits();
-      message.success('Easy Setup applied.');
+      message.success(t('notifications.success_easy_setup_applied'));
     } catch (error) {
-      handleError(error, 'Easy Setup failed');
+      handleError(error, t('errors.easy_setup_failed'));
     } finally {
       easySetupLoading.value = false;
     }
@@ -641,11 +679,11 @@ function createAdminConsoleState() {
 
   async function createRoute() {
     if (!selectedNetworkId.value) {
-      message.warning('Please select a network first.');
+      message.warning(t('notifications.warn_select_network_first'));
       return;
     }
     if (!routeForm.target.trim()) {
-      message.warning('Please enter a target CIDR.');
+      message.warning(t('notifications.warn_enter_target_cidr'));
       return;
     }
 
@@ -665,9 +703,9 @@ function createAdminConsoleState() {
       routeForm.via = '';
       await loadSelectedNetwork(selectedNetworkId.value);
       await loadAudits();
-      message.success('Route added.');
+      message.success(t('notifications.success_route_added'));
     } catch (error) {
-      handleError(error, 'Failed to add route');
+      handleError(error, t('errors.add_route_failed'));
     }
   }
 
@@ -679,19 +717,19 @@ function createAdminConsoleState() {
       await request(`/api/networks/${selectedNetworkId.value}/routes/${routeId}`, { method: 'DELETE' });
       await loadSelectedNetwork(selectedNetworkId.value);
       await loadAudits();
-      message.success('Route deleted.');
+      message.success(t('notifications.success_route_deleted'));
     } catch (error) {
-      handleError(error, 'Failed to delete route');
+      handleError(error, t('errors.delete_route_failed'));
     }
   }
 
   async function createPool() {
     if (!selectedNetworkId.value) {
-      message.warning('Please select a network first.');
+      message.warning(t('notifications.warn_select_network_first'));
       return;
     }
     if (!poolForm.ipRangeStart.trim() || !poolForm.ipRangeEnd.trim()) {
-      message.warning('Please enter both start and end IP addresses.');
+      message.warning(t('notifications.warn_enter_pool_range'));
       return;
     }
 
@@ -707,9 +745,9 @@ function createAdminConsoleState() {
 
       await loadSelectedNetwork(selectedNetworkId.value);
       await loadAudits();
-      message.success('IP pool added.');
+      message.success(t('notifications.success_pool_added'));
     } catch (error) {
-      handleError(error, 'Failed to add IP pool');
+      handleError(error, t('errors.add_ip_pool_failed'));
     }
   }
 
@@ -721,15 +759,15 @@ function createAdminConsoleState() {
       await request(`/api/networks/${selectedNetworkId.value}/ip-pools/${poolId}`, { method: 'DELETE' });
       await loadSelectedNetwork(selectedNetworkId.value);
       await loadAudits();
-      message.success('IP pool deleted.');
+      message.success(t('notifications.success_pool_deleted'));
     } catch (error) {
-      handleError(error, 'Failed to delete IP pool');
+      handleError(error, t('errors.delete_ip_pool_failed'));
     }
   }
 
   async function saveDns() {
     if (!selectedNetworkId.value) {
-      message.warning('Please select a network first.');
+      message.warning(t('notifications.warn_select_network_first'));
       return;
     }
     try {
@@ -744,15 +782,15 @@ function createAdminConsoleState() {
 
       await loadSelectedNetwork(selectedNetworkId.value);
       await loadAudits();
-      message.success('DNS saved.');
+      message.success(t('notifications.success_dns_saved'));
     } catch (error) {
-      handleError(error, 'Failed to save DNS');
+      handleError(error, t('errors.save_dns_failed'));
     }
   }
 
   async function syncMembers() {
     if (!selectedNetworkId.value) {
-      message.warning('Please select a network first.');
+      message.warning(t('notifications.warn_select_network_first'));
       return;
     }
     try {
@@ -762,15 +800,15 @@ function createAdminConsoleState() {
       await loadSelectedNetwork(selectedNetworkId.value);
       await loadAudits();
       networkTab.value = 'sync';
-      message.success(`${result.provider} member sync completed.`);
+      message.success(t('notifications.success_member_sync_completed', { provider: result.provider }));
     } catch (error) {
-      handleError(error, 'Failed to sync members');
+      handleError(error, t('errors.sync_members_failed'));
     }
   }
 
   async function syncConfig() {
     if (!selectedNetworkId.value) {
-      message.warning('Please select a network first.');
+      message.warning(t('notifications.warn_select_network_first'));
       return;
     }
     try {
@@ -780,9 +818,9 @@ function createAdminConsoleState() {
       await loadSelectedNetwork(selectedNetworkId.value);
       await loadAudits();
       networkTab.value = 'sync';
-      message.success(`${result.provider} config sync completed.`);
+      message.success(t('notifications.success_config_sync_completed', { provider: result.provider }));
     } catch (error) {
-      handleError(error, 'Failed to sync config');
+      handleError(error, t('errors.sync_config_failed'));
     }
   }
 
@@ -797,9 +835,11 @@ function createAdminConsoleState() {
       );
       await loadSelectedNetwork(selectedNetworkId.value);
       await loadAudits();
-      message.success(`${member.name || member.providerMemberId} authorization updated.`);
+      message.success(
+        t('notifications.success_member_auth_updated', { member: member.name || member.providerMemberId })
+      );
     } catch (error) {
-      handleError(error, 'Failed to update member authorization');
+      handleError(error, t('errors.update_member_authorization_failed'));
     }
   }
 
@@ -817,9 +857,9 @@ function createAdminConsoleState() {
 
       await loadSelectedNetwork(selectedNetworkId.value);
       await loadAudits();
-      message.success(`${member.name || member.providerMemberId} IP assignments saved.`);
+      message.success(t('notifications.success_member_ip_saved', { member: member.name || member.providerMemberId }));
     } catch (error) {
-      handleError(error, 'Failed to save member IP assignments');
+      handleError(error, t('errors.save_member_ip_failed'));
     }
   }
 
@@ -827,21 +867,21 @@ function createAdminConsoleState() {
     try {
       audits.value = await request<AuditLog[]>('/api/audit-logs');
     } catch (error) {
-      handleError(error, 'Failed to load audit logs');
+      handleError(error, t('errors.load_audit_logs_failed'));
     }
   }
 
   function generateAccessArtifact() {
     inviteVersion.value = Date.now();
-    message.info('Access code and QR preview refreshed. Plant file download still uses the live backend endpoint.');
+    message.info(t('notifications.info_access_artifact_refreshed'));
   }
 
   async function copyAccessCode() {
     try {
       await navigator.clipboard.writeText(accessCode.value);
-      message.success('Access code copied.');
+      message.success(t('notifications.success_access_code_copied'));
     } catch {
-      message.warning('Clipboard is not available in this environment. Please copy the access code manually.');
+      message.warning(t('notifications.warn_clipboard_unavailable'));
     }
   }
 
@@ -931,6 +971,7 @@ function createAdminConsoleState() {
     dashboardStatusItems,
     dnsConfig,
     dnsForm,
+    downloadMoonFile,
     downloadPlantFile,
     easySetupForm,
     easySetupLoading,

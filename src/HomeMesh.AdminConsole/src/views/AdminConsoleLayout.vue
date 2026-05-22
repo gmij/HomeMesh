@@ -30,7 +30,7 @@
       </div>
 
       <footer class="page-footer">
-        <span>© 2026 HomeMesh Team</span>
+        <span>{{ $t('common.footer') }}</span>
       </footer>
     </div>
 

@@ -1,42 +1,46 @@
 <template>
   <a-modal
     :open="open"
-    title="Easy Setup"
-    ok-text="应用"
-    cancel-text="取消"
+    :title="$t('modals.easy_setup.title')"
+    :ok-text="$t('modals.easy_setup.ok_text')"
+    :cancel-text="$t('modals.easy_setup.cancel_text')"
     :confirm-loading="loading"
     @ok="emit('submit')"
     @cancel="emit('update:open', false)"
   >
     <a-form layout="vertical">
-      <a-form-item label="CIDR">
-        <a-input :value="form.cidr" placeholder="10.10.0.0/16" @update:value="emit('update:form', 'cidr', $event)" />
+      <a-form-item :label="$t('modals.easy_setup.cidr_label')">
+        <a-input
+          :value="form.cidr"
+          :placeholder="$t('modals.easy_setup.cidr_placeholder')"
+          @update:value="emit('update:form', 'cidr', $event)"
+        />
       </a-form-item>
-      <a-form-item label="IP Pool Start">
+      <a-form-item :label="$t('modals.easy_setup.pool_start_label')">
         <a-input
           :value="form.ipPoolStart"
-          placeholder="10.10.0.10"
+          :placeholder="$t('modals.easy_setup.pool_start_placeholder')"
           @update:value="emit('update:form', 'ipPoolStart', $event)"
         />
       </a-form-item>
-      <a-form-item label="IP Pool End">
+      <a-form-item :label="$t('modals.easy_setup.pool_end_label')">
         <a-input
           :value="form.ipPoolEnd"
-          placeholder="10.10.0.200"
+          :placeholder="$t('modals.easy_setup.pool_end_placeholder')"
           @update:value="emit('update:form', 'ipPoolEnd', $event)"
         />
       </a-form-item>
-      <a-form-item label="DNS Domain">
+      <a-form-item :label="$t('modals.easy_setup.dns_domain_label')">
         <a-input
           :value="form.dnsDomain"
-          placeholder="home.arpa"
+          :placeholder="$t('modals.easy_setup.dns_domain_placeholder')"
           @update:value="emit('update:form', 'dnsDomain', $event)"
         />
       </a-form-item>
-      <a-form-item label="DNS Servers">
+      <a-form-item :label="$t('modals.easy_setup.dns_servers_label')">
         <a-input
           :value="form.dnsServers"
-          placeholder="1.1.1.1, 8.8.8.8"
+          :placeholder="$t('modals.easy_setup.dns_servers_placeholder')"
           @update:value="emit('update:form', 'dnsServers', $event)"
         />
       </a-form-item>
@@ -45,7 +49,7 @@
           :checked="form.enableAutoAssign"
           @update:checked="emit('update:form', 'enableAutoAssign', $event)"
         >
-          自动分配 IP
+          {{ $t('modals.easy_setup.auto_assign_label') }}
         </a-checkbox>
       </a-form-item>
       <a-form-item>
@@ -53,7 +57,7 @@
           :checked="form.autoApproveMembers"
           @update:checked="emit('update:form', 'autoApproveMembers', $event)"
         >
-          自动批准成员
+          {{ $t('modals.easy_setup.auto_approve_label') }}
         </a-checkbox>
       </a-form-item>
     </a-form>

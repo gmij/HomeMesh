@@ -16,6 +16,29 @@ export interface ProviderStatus {
   checkedAt?: string;
 }
 
+export interface ZeroTierConfig {
+  enabled: boolean;
+  port: number;
+  authTokenPath: string;
+}
+
+export interface ZeroTierConfigSaveResult {
+  config: ZeroTierConfig;
+  restartRequired: boolean;
+  message: string;
+}
+
+export interface ZeroTierTestResult {
+  status: string;
+  message: string;
+  detail?: string;
+  checkedAt?: string;
+}
+
+export interface ZeroTierTokenUploadResult {
+  authTokenPath: string;
+}
+
 export interface DashboardSummary {
   networkCount: number;
   memberCount: number;

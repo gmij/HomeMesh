@@ -11,8 +11,7 @@ public sealed class ProviderAbstractionTests
     {
         var options = Options.Create(new ZeroTierOptions
         {
-            Enabled = false,
-            ApiBaseUrl = "http://127.0.0.1:9993"
+            Enabled = false
         });
 
         using var httpClient = new HttpClient();

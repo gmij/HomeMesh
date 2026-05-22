@@ -3,12 +3,12 @@
     <div class="section-heading">
       <div class="heading-badge">4</div>
       <div class="heading-copy">
-        <h2>协议 Provider</h2>
-        <p>当前启用中的 Provider 与后续规划统一放在这里。</p>
+        <h2>{{ $t('providers.title') }}</h2>
+        <p>{{ $t('providers.description') }}</p>
       </div>
       <div class="section-tools">
         <a-button :icon="h(ReloadOutlined)" :loading="refreshing" @click="emit('refresh')">
-          刷新 Provider
+          {{ $t('providers.refresh') }}
         </a-button>
       </div>
     </div>
@@ -23,7 +23,7 @@
 
       <div class="workspace-body">
         <div class="provider-intro">
-          当前已接入与规划中的协议能力，都在这里统一查看。
+          {{ $t('providers.intro') }}
         </div>
 
         <div class="provider-grid">
@@ -42,20 +42,20 @@
 
             <div class="definition-list">
               <div>
-                <span>状态</span>
+                <span>{{ $t('providers.status_label') }}</span>
                 <strong>{{ card.status }}</strong>
               </div>
               <div>
-                <span>控制平面</span>
+                <span>{{ $t('providers.control_plane_label') }}</span>
                 <strong>{{ card.controlPlane }}</strong>
               </div>
               <div>
-                <span>网络 ID</span>
+                <span>{{ $t('providers.network_id_label') }}</span>
                 <strong>{{ card.networkId }}</strong>
               </div>
             </div>
 
-            <a-button :type="card.actionType" block :disabled="card.disabled">
+            <a-button :type="card.actionType" block :disabled="card.disabled" @click="!card.disabled && emit('card-action', card.key)">
               {{ card.actionLabel }}
             </a-button>
           </article>
@@ -84,5 +84,6 @@ defineProps<{
 const emit = defineEmits<{
   navigate: [key: PrototypeSectionKey];
   refresh: [];
+  'card-action': [key: string];
 }>();
 </script>

@@ -9,9 +9,12 @@
 
 # ide files
 .vs/
+.vite/
+
 
 # database files
 *.db
+data/
 
 
 # Build results

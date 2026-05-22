@@ -1,0 +1,32 @@
+# VCS & editor
+.git
+.vs
+.vscode
+.gitignore
+
+# Source code — not needed in runtime image
+src/
+tests/
+docs/
+*.sln
+Directory.Build.props
+*.md
+AGENTS.md
+CLAUDE.md
+
+# Deploy scripts & other docker files (keep entrypoint.sh)
+deploy/build.ps1
+deploy/publish-adminconsole.ps1
+deploy/docker/Dockerfile
+deploy/docker/docker-compose.yml
+
+# Artifacts — keep only the publish output
+artifacts/edge-profile/
+artifacts/tmp-authtoken.secret
+artifacts/*.png
+
+# Build caches
+**/bin/
+**/obj/
+**/node_modules/
+**/.vite/

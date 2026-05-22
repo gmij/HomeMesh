@@ -3,13 +3,13 @@
     <div class="section-heading">
       <div class="heading-badge">1</div>
       <div class="heading-copy">
-        <h2>控制台总览</h2>
-        <p>网络、设备、网关与同步概况集中在一屏里。</p>
+        <h2>{{ $t('dashboard.title') }}</h2>
+        <p>{{ $t('dashboard.description') }}</p>
       </div>
       <div class="section-tools">
-        <a-button :icon="h(BellOutlined)">通知</a-button>
+        <a-button :icon="h(BellOutlined)">{{ $t('buttons.notification') }}</a-button>
         <a-button type="primary" :icon="h(PlusOutlined)" @click="emit('open-create')">
-          新建网络
+          {{ $t('buttons.create_network') }}
         </a-button>
       </div>
     </div>
@@ -39,9 +39,9 @@
         <div class="content-split">
           <article class="panel-card">
             <div class="panel-card__header">
-              <h3>网络列表</h3>
+              <h3>{{ $t('dashboard.networks_section') }}</h3>
               <a-button type="link" @click="emit('navigate', prototypeSections.network)">
-                打开网络区
+                {{ $t('dashboard.networks_link') }}
               </a-button>
             </div>
 
@@ -49,10 +49,10 @@
               <table class="prototype-table">
                 <thead>
                   <tr>
-                    <th>网络名称</th>
-                    <th>Provider</th>
-                    <th>CIDR</th>
-                    <th>状态</th>
+                    <th>{{ $t('dashboard.table_headers.name') }}</th>
+                    <th>{{ $t('dashboard.table_headers.provider') }}</th>
+                    <th>{{ $t('dashboard.table_headers.cidr') }}</th>
+                    <th>{{ $t('dashboard.table_headers.status') }}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -66,7 +66,7 @@
                       <button type="button" class="link-button">{{ network.name }}</button>
                     </td>
                     <td>{{ providerForNetwork(network.id) }}</td>
-                    <td>{{ network.cidr ?? '自动分配' }}</td>
+                    <td>{{ network.cidr ?? $t('network.auto_assigned') }}</td>
                     <td>
                       <a-tag :color="statusColor(network.status)">{{ network.status }}</a-tag>
                     </td>
@@ -74,13 +74,13 @@
                 </tbody>
               </table>
             </div>
-            <a-empty v-else :image="simpleEmptyImage" description="还没有创建网络" />
+            <a-empty v-else :image="simpleEmptyImage" :description="$t('dashboard.no_networks')" />
           </article>
 
           <article class="panel-card">
             <div class="panel-card__header">
-              <h3>最近事件</h3>
-              <a-button type="link" @click="emit('refresh-audits')">更新列表</a-button>
+              <h3>{{ $t('dashboard.recent_events') }}</h3>
+              <a-button type="link" @click="emit('refresh-audits')">{{ $t('dashboard.refresh_events') }}</a-button>
             </div>
 
             <div v-if="recentAudits.length" class="event-list">
@@ -88,11 +88,11 @@
                 <div class="event-time">{{ formatTime(audit.createdAt, 'time') }}</div>
                 <div class="event-copy">
                   <strong>{{ audit.message }}</strong>
-                  <span>{{ audit.actor || 'system' }}</span>
+                  <span>{{ audit.actor || $t('audit.system_actor') }}</span>
                 </div>
               </div>
             </div>
-            <a-empty v-else :image="simpleEmptyImage" description="最近还没有新的事件" />
+            <a-empty v-else :image="simpleEmptyImage" :description="$t('dashboard.no_events')" />
           </article>
         </div>
       </div>

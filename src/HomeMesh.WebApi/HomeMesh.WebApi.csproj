@@ -17,7 +17,7 @@
     <PackageReference Include="Serilog.Settings.Configuration" Version="8.0.4" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.9.0" />
   </ItemGroup>
-  <Target Name="BuildAdminConsoleForPublish" BeforeTargets="ComputeFilesToPublish">
+  <Target Name="BuildAdminConsoleForPublish" BeforeTargets="ComputeFilesToPublish" Condition="'$(SkipAdminConsoleBuild)' != 'true'">
     <Message Importance="high" Text="Building HomeMesh admin console into $(MSBuildProjectDirectory)\dist" />
     <Exec WorkingDirectory="$(AdminConsoleProjectDir)" Command="npm ci" />
     <Exec WorkingDirectory="$(AdminConsoleProjectDir)" Command="npm run build" />

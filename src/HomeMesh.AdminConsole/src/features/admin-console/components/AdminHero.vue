@@ -7,18 +7,18 @@
           <span></span>
         </div>
         <div>
-          <div class="hero-title">HomeMesh</div>
-          <div class="hero-subtitle">Home SD-WAN Controller</div>
+          <div class="hero-title">{{ $t('hero.title') }}</div>
+          <div class="hero-subtitle">{{ $t('hero.subtitle') }}</div>
         </div>
       </div>
 
-      <div class="hero-tagline">面向家庭与小型办公场景的 SD-WAN 控制台</div>
+      <div class="hero-tagline">{{ $t('hero.tagline') }}</div>
     </div>
 
     <div class="hero-actions">
       <div class="hero-toolbar">
         <a-button :icon="h(ReloadOutlined)" :loading="refreshing" @click="emit('refresh')">
-          刷新
+          {{ $t('buttons.refresh') }}
         </a-button>
         <a-dropdown>
           <a-button>
@@ -31,7 +31,7 @@
             <a-menu>
               <a-menu-item key="logout" @click="emit('logout')">
                 <LogoutOutlined />
-                <span>退出登录</span>
+                <span>{{ $t('buttons.logout') }}</span>
               </a-menu-item>
             </a-menu>
           </template>

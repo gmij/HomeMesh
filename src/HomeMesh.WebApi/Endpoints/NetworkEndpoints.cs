@@ -96,7 +96,7 @@ public static class NetworkEndpoints
             {
                 return Results.Json(new
                 {
-                    error = "Provider connection failed. Use Demo for local demos, or check ZeroTier service, ApiBaseUrl, and auth token configuration.",
+                    error = "Provider connection failed. Check that ZeroTier service is running and the auth token path is correct.",
                     detail = ex.Message
                 }, statusCode: StatusCodes.Status502BadGateway);
             }
@@ -131,24 +131,57 @@ public static class NetworkEndpoints
                 return Results.NotFound(new { error = "Network provider binding not found." });
             }
 
-            var payload = new
+            var planetPath = "/app/dist/planet";
+            if (!File.Exists(planetPath))
             {
-                type = "HomeMesh.NetworkJoinFile.v1",
-                networkId = network.Id,
-                networkName = network.Name,
-                cidr = network.Cidr,
-                autoApproveMembers = network.AutoApproveMembers,
-                provider = binding.Provider,
-                providerNetworkId = binding.ProviderNetworkId,
-                generatedAt = DateTimeOffset.UtcNow
-            };
+                return Results.NotFound(new { error = "Planet file not found. Please wait for container initialization or regenerate it." });
+            }
 
-            var content = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
-            var safeName = network.Name.Trim().Replace(' ', '-');
             return Results.File(
-                System.Text.Encoding.UTF8.GetBytes(content),
-                "application/json",
-                $"homemesh-{safeName}-{binding.Provider}.plant.json");
+                await File.ReadAllBytesAsync(planetPath, cancellationToken),
+                "application/octet-stream",
+                "planet");
+        });
+
+        app.MapGet("/api/networks/{networkId}/moon-file", async Task<IResult> (string networkId, HomeMeshDbContext db, CancellationToken cancellationToken) =>
+        {
+            var network = await db.Networks.FirstOrDefaultAsync(x => x.Id == networkId, cancellationToken);
+            if (network is null)
+            {
+                return Results.NotFound(new { error = "Network not found." });
+            }
+
+            var binding = await db.NetworkProviderBindings
+                .Where(x => x.NetworkId == networkId)
+                .OrderByDescending(x => x.IsPrimary)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (binding is null)
+            {
+                return Results.NotFound(new { error = "Network provider binding not found." });
+            }
+
+            var moonDirectory = "/app/dist";
+            if (!Directory.Exists(moonDirectory))
+            {
+                return Results.NotFound(new { error = "Moon file directory was not found." });
+            }
+
+            var moonFilePath = Directory
+                .GetFiles(moonDirectory, "*.moon")
+                .OrderByDescending(File.GetLastWriteTimeUtc)
+                .FirstOrDefault();
+
+            if (string.IsNullOrWhiteSpace(moonFilePath))
+            {
+                return Results.NotFound(new { error = "Moon file not found. Please wait for container initialization or regenerate it." });
+            }
+
+            var moonFileName = Path.GetFileName(moonFilePath);
+            return Results.File(
+                await File.ReadAllBytesAsync(moonFilePath, cancellationToken),
+                "application/octet-stream",
+                moonFileName);
         });
 
         app.MapDelete("/api/networks/{networkId}", async Task<IResult> (string networkId, NetworkService networkService, CancellationToken cancellationToken) =>
