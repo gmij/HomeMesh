@@ -10,6 +10,7 @@
 # ide files
 .vs/
 .vite/
+wwwroot/
 
 
 # database files

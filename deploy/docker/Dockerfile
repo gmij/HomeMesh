@@ -1,12 +1,34 @@
-# ─────────────────────────────────────────────────────────────────────────────
-# 阶段1：在 Debian 环境编译 mkworld（自定义 planet 文件生成工具）
-# mkworld_custom.cpp 来自 xubiaolin，纯 C++，只依赖 zerotier 内部头文件
-# ─────────────────────────────────────────────────────────────────────────────
+FROM node:22-bookworm-slim AS node-runtime
+
+FROM mcr.microsoft.com/dotnet/sdk:latest AS webapi-publish
+
+COPY --from=node-runtime /usr/local/ /usr/local/
+
+WORKDIR /src
+
+COPY HomeMesh.sln ./
+COPY Directory.Build.props ./
+COPY src/HomeMesh.Abstractions/HomeMesh.Abstractions.csproj src/HomeMesh.Abstractions/
+COPY src/HomeMesh.AdminConsole/package.json src/HomeMesh.AdminConsole/
+COPY src/HomeMesh.AdminConsole/package-lock.json src/HomeMesh.AdminConsole/
+COPY src/HomeMesh.Application/HomeMesh.Application.csproj src/HomeMesh.Application/
+COPY src/HomeMesh.Domain/HomeMesh.Domain.csproj src/HomeMesh.Domain/
+COPY src/HomeMesh.Infrastructure/HomeMesh.Infrastructure.csproj src/HomeMesh.Infrastructure/
+COPY src/HomeMesh.Protocol.ZeroTier/HomeMesh.Protocol.ZeroTier.csproj src/HomeMesh.Protocol.ZeroTier/
+COPY src/HomeMesh.WebApi/HomeMesh.WebApi.csproj src/HomeMesh.WebApi/
+
+RUN dotnet restore HomeMesh.sln --verbosity minimal
+
+COPY src ./src
+
+RUN dotnet publish src/HomeMesh.WebApi/HomeMesh.WebApi.csproj \
+    --configuration Release \
+    --output /out \
+    --no-restore \
+    --verbosity minimal
+
 FROM debian:bookworm-slim AS mkworld-builder
 
-# 仅保留 bookworm 主源，移除 updates/security（这些在部分网络返回 400）
-# 对于编译构建阶段，主源已足够
-# debian:bookworm-slim 无 ca-certificates，只能用 HTTP 协议；选中科大源（USTC）
 RUN printf 'deb http://mirrors.ustc.edu.cn/debian bookworm main\n' \
         > /etc/apt/sources.list \
     && rm -f /etc/apt/sources.list.d/*.sources \
@@ -18,18 +40,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential cmake curl ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# 使用宿主机 git sparse-checkout 预下载的 ZeroTierOne 1.12.2 源码（只含编译所需目录）
-# 宿主机准备命令：
-#   git clone --depth 1 --filter=blob:none --sparse -b 1.12.2 https://github.com/zerotier/ZeroTierOne.git deploy/docker/zt-sparse
-#   cd deploy/docker/zt-sparse && git sparse-checkout set node osdep include attic/world
-# attic/world/ 在 1.12.x 中存在，1.14+ 已删除；ext/ 目录含预编译库（约 300MB）不需要也不复制
 COPY deploy/docker/zt-sparse/node /zt/node
 COPY deploy/docker/zt-sparse/osdep /zt/osdep
 COPY deploy/docker/zt-sparse/include /zt/include
 COPY deploy/docker/zt-sparse/attic /zt/attic
 COPY deploy/docker/zt-sparse/ext/nlohmann /zt/ext/nlohmann
 
-# 替换为 xubiaolin 的自定义 mkworld.cpp（支持从 JSON 动态生成 planet 文件）
 RUN curl -fsSL \
     https://raw.githubusercontent.com/xubiaolin/docker-zerotier-planet/master/patch/mkworld_custom.cpp \
     -o /zt/attic/world/mkworld.cpp
@@ -46,21 +62,12 @@ RUN cd /zt/attic/world && \
         mkworld.cpp \
         -lm
 
-# ─────────────────────────────────────────────────────────────────────────────
-# 最终镜像：基于 .NET 10 官方镜像（Debian Bookworm，glibc，与阶段2兼容）
-# 包含：zerotier-one（官方包）+ mkworld（阶段2编译）+ HomeMesh WebApi
-#
-# 宿主机预构建：.\deploy\build.ps1
-# 启动：docker compose -f deploy\docker\docker-compose.yml up -d --build
-# ─────────────────────────────────────────────────────────────────────────────
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
 
 ARG TZ=Asia/Shanghai
 ENV TZ=${TZ}
 ENV ASPNETCORE_URLS=http://+:8080
 
-# 禁用 HTTP 流水线（绕过 Docker Desktop 代理 400 问题）+ 替换国内镜像源
-# 兼容 Ubuntu DEB822 格式 (ubuntu.sources) / Debian DEB822 (debian.sources) / 旧格式 (sources.list)
 RUN printf 'Acquire::http::Pipeline-Depth "0";\nAcquire::Retries "5";\n' \
         > /etc/apt/apt.conf.d/99no-pipeline; \
     if [ -f /etc/apt/sources.list.d/ubuntu.sources ]; then \
@@ -91,24 +98,17 @@ RUN apt-get update \
         tzdata ca-certificates curl jq iproute2 \
     && rm -rf /var/lib/apt/lists/*
 
-# 安装 ZeroTier（官方脚本，Debian/Ubuntu 适用）
-# 安装后立即清理构建期间产生的身份文件，使容器首次启动时能通过 entrypoint 重新初始化
 RUN curl -fsSL https://install.zerotier.com | bash; \
-    test -x /usr/sbin/zerotier-one || { echo "ZeroTier 安装失败"; exit 1; }; \
+    test -x /usr/sbin/zerotier-one || { echo "ZeroTier install failed"; exit 1; }; \
     rm -rf /var/lib/zerotier-one/*
 
-# 拷贝 mkworld 二进制（阶段2编译，glibc，与最终镜像兼容）
 COPY --from=mkworld-builder /zt/attic/world/mkworld /usr/local/bin/mkworld
 RUN chmod +x /usr/local/bin/mkworld
 
-# 创建运行时所需目录
 RUN mkdir -p /app/dist /app/config /app/data /app/homemesh /var/lib/zerotier-one
 
-# 发布前先执行 dotnet publish，产物输出到 artifacts/publish/webapi
-# 拷贝 HomeMesh WebApi 发布产物
-COPY artifacts/publish/webapi /app/homemesh/
+COPY --from=webapi-publish /out /app/homemesh/
 
-# 拷贝 entrypoint（planet 初始化 + HomeMesh WebApi 启动）
 COPY deploy/docker/entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 
