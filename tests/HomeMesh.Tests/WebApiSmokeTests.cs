@@ -46,5 +46,16 @@ public sealed class WebApiSmokeTests : IClassFixture<WebApplicationFactory<HomeM
         response.EnsureSuccessStatusCode();
     }
 
+    [Fact]
+    public async Task Root_Should_Return_Html()
+    {
+        using var client = _factory.CreateClient();
+
+        var response = await client.GetAsync("/");
+
+        response.EnsureSuccessStatusCode();
+        Assert.Equal("text/html", response.Content.Headers.ContentType?.MediaType);
+    }
+
     private sealed record HealthResponse(string Status, string Service, DateTimeOffset CheckedAt);
 }

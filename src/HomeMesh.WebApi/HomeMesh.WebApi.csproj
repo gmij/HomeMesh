@@ -18,15 +18,8 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.9.0" />
   </ItemGroup>
   <Target Name="BuildAdminConsoleForPublish" BeforeTargets="ComputeFilesToPublish" Condition="'$(SkipAdminConsoleBuild)' != 'true'">
-    <Message Importance="high" Text="Building HomeMesh admin console into $(MSBuildProjectDirectory)\dist" />
+    <Message Importance="high" Text="Building HomeMesh admin console into $(MSBuildProjectDirectory)\wwwroot" />
     <Exec WorkingDirectory="$(AdminConsoleProjectDir)" Command="npm ci" />
     <Exec WorkingDirectory="$(AdminConsoleProjectDir)" Command="npm run build" />
-    <ItemGroup>
-      <DistFiles Include="$(MSBuildProjectDirectory)\dist\**\*.*" />
-      <ResolvedFileToPublish Include="@(DistFiles)">
-        <RelativePath>dist\%(RecursiveDir)%(Filename)%(Extension)</RelativePath>
-        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-      </ResolvedFileToPublish>
-    </ItemGroup>
   </Target>
 </Project>

@@ -14,12 +14,12 @@
 
 客户端侧最小闭环建议围绕 `plant-file` 设计：
 
-1. 用户从 `/admin` 下载网络的 plant 文件。
+1. 用户从 `/` 下载网络的 plant 文件。
 2. 客户端读取 plant 文件。
 3. 客户端识别 Provider：`Demo` / `ZeroTier`。
 4. 如果是 ZeroTier，读取 `providerNetworkId` 并调用本机 ZeroTier One 加入网络。
 5. 客户端上报设备信息或等待 Controller 从 Provider 同步成员。
-6. 管理员在 `/admin` 同步成员。
+6. 管理员在 `/` 同步成员。
 7. 如果网络开启自动审核，Controller 自动授权成员。
 8. 管理员或 Controller 给设备分配 IP 地址。
 
@@ -83,4 +83,4 @@ HomeMesh.Client.App
 2. 展示网络名、CIDR、Provider、ProviderNetworkId。
 3. 如果 Provider 是 `ZeroTier`，调用本机 ZeroTier 加入网络。
 4. 显示加入状态。
-5. 提示管理员回到 `/admin` 同步成员、授权、分配 IP。
+5. 提示管理员回到 `/` 同步成员、授权、分配 IP。

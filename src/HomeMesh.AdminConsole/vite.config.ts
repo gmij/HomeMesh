@@ -6,7 +6,7 @@ import { AntDesignVueResolver } from 'unplugin-vue-components/resolvers';
 const proxyTarget = process.env.VITE_API_PROXY_TARGET ?? 'http://localhost:5000';
 
 export default defineConfig({
-  base: '/admin/',
+  base: '/',
   plugins: [
     vue(),
     Components({
@@ -19,7 +19,7 @@ export default defineConfig({
     })
   ],
   build: {
-    outDir: '../HomeMesh.WebApi/dist',
+    outDir: '../HomeMesh.WebApi/wwwroot',
     emptyOutDir: true,
     rollupOptions: {
       output: {

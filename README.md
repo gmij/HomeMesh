@@ -43,13 +43,13 @@ dotnet run --project src/HomeMesh.WebApi/HomeMesh.WebApi.csproj
 打开：
 
 ```text
-http://localhost:5000/admin
+http://localhost:5000/
 ```
 
 如果使用 Docker 暴露端口，则通常是：
 
 ```text
-http://localhost:8080/admin
+http://localhost:8080/
 ```
 
 首次打开管理台时，系统会提示创建第一个管理员账号。创建后会自动登录。
@@ -63,14 +63,14 @@ docker compose -f deploy/docker/docker-compose.yml up -d --build
 访问：
 
 ```text
-http://localhost:8080/admin
+http://localhost:8080/
 ```
 
 ## Demo Provider 演示模式
 
 没有 ZeroTier 环境时，也可以完整体验 MVP 流程。
 
-1. 打开 `/admin`
+1. 打开 `/`
 2. 创建管理员账号并登录
 3. 创建网络时选择 `Demo 演示`
 4. 使用 Easy Setup 设置 CIDR、IP 池和 DNS
@@ -113,7 +113,7 @@ http://127.0.0.1:9993
 
 ## MVP 操作流程
 
-1. 打开 `/admin`
+1. 打开 `/`
 2. 创建管理员账号
 3. 登录管理台
 4. 创建一个网络，演示环境选择 `Demo 演示`，真实环境选择 `ZeroTier`

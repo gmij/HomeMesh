@@ -6,8 +6,32 @@ using HomeMesh.Infrastructure.Persistence;
 using HomeMesh.Protocol.ZeroTier;
 using HomeMesh.WebApi.Endpoints;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.FileProviders;
 using Serilog;
+
+const string MissingAdminConsoleHtml = """
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HomeMesh Admin Console</title>
+  <style>
+    body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f3f6fb;color:#0f172a;display:grid;place-items:center;min-height:100vh;padding:24px}
+    main{max-width:720px;background:#fff;border:1px solid #dbe4f1;border-radius:20px;padding:28px;box-shadow:0 20px 48px rgba(15,23,42,.08)}
+    h1{margin:0 0 12px;font-size:28px}
+    p{margin:0 0 12px;line-height:1.7;color:#475569}
+    code{padding:2px 8px;border-radius:8px;background:#eff6ff;color:#1d4ed8}
+  </style>
+</head>
+<body>
+  <main>
+    <h1>HomeMesh Admin Console 尚未构建</h1>
+    <p>新的前端已经切换为 Vue + Ant Design Vue。</p>
+    <p>请先在 <code>src/HomeMesh.AdminConsole</code> 下执行 <code>npm install</code> 与 <code>npm run build</code>，或直接使用发布流程自动构建。</p>
+  </main>
+</body>
+</html>
+""";
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,7 +50,6 @@ builder.Services.AddZeroTierProvider(builder.Configuration);
 builder.Services.AddHomeMeshApplication();
 
 var app = builder.Build();
-var adminDistPath = Path.Combine(app.Environment.ContentRootPath, "dist");
 
 using (var scope = app.Services.CreateScope())
 {
@@ -54,54 +77,16 @@ app.Use(async (context, next) =>
     await next();
 });
 
-app.UseSwagger();
-app.UseSwaggerUI();
-app.UseStaticFiles();
-
-if (Directory.Exists(adminDistPath))
+if (app.Environment.IsDevelopment())
 {
-    app.UseStaticFiles(new StaticFileOptions
-    {
-        FileProvider = new PhysicalFileProvider(adminDistPath),
-        RequestPath = "/admin"
-    });
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 
-app.MapGet("/", () => Results.Redirect("/admin"));
+app.UseDefaultFiles();
+app.UseStaticFiles();
 
-app.MapGet("/admin/{*path:nonfile}", (string? path, IWebHostEnvironment environment) =>
-{
-    var indexPath = Path.Combine(environment.ContentRootPath, "dist", "index.html");
-    if (!File.Exists(indexPath))
-    {
-        return Results.Content("""
-<!doctype html>
-<html lang="zh-CN">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>HomeMesh Admin Console</title>
-  <style>
-    body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f3f6fb;color:#0f172a;display:grid;place-items:center;min-height:100vh;padding:24px}
-    main{max-width:720px;background:#fff;border:1px solid #dbe4f1;border-radius:20px;padding:28px;box-shadow:0 20px 48px rgba(15,23,42,.08)}
-    h1{margin:0 0 12px;font-size:28px}
-    p{margin:0 0 12px;line-height:1.7;color:#475569}
-    code{padding:2px 8px;border-radius:8px;background:#eff6ff;color:#1d4ed8}
-  </style>
-</head>
-<body>
-  <main>
-    <h1>HomeMesh Admin Console 尚未构建</h1>
-    <p>新的前端已经切换为 Vue + Ant Design Vue。</p>
-    <p>请先在 <code>src/HomeMesh.AdminConsole</code> 下执行 <code>npm install</code> 与 <code>npm run build</code>，或直接使用发布流程自动构建。</p>
-  </main>
-</body>
-</html>
-""", "text/html; charset=utf-8");
-    }
-
-    return Results.File(indexPath, "text/html; charset=utf-8");
-});
+app.MapGet("/admin/{*path}", () => Results.Redirect("/"));
 
 app.MapGet("/health", () => Results.Ok(new
 {
@@ -148,6 +133,16 @@ app.MapGet("/api/audit-logs", async (HomeMeshDbContext db, CancellationToken can
         .ToList();
 
     return Results.Ok(logs);
+});
+
+app.MapFallback((IWebHostEnvironment environment) =>
+{
+    var webRootPath = environment.WebRootPath ?? Path.Combine(environment.ContentRootPath, "wwwroot");
+    var indexPath = Path.Combine(webRootPath, "index.html");
+
+    return File.Exists(indexPath)
+        ? Results.File(indexPath, "text/html; charset=utf-8")
+        : Results.Content(MissingAdminConsoleHtml, "text/html; charset=utf-8");
 });
 
 app.Run();
