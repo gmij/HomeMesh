@@ -9,6 +9,7 @@ import {
 } from '@ant-design/icons-vue';
 
 import type {
+  AccessArtifacts,
   AuditLog,
   AuthStatusResponse,
   AuthUser,
@@ -77,6 +78,7 @@ function createAdminConsoleState() {
   const routes = ref<RouteItem[]>([]);
   const pools = ref<IpPoolItem[]>([]);
   const dnsConfig = ref<DnsConfig | null>(null);
+  const accessArtifacts = ref<AccessArtifacts | null>(null);
   const memberSyncStates = ref<SyncState[]>([]);
   const configSyncStates = ref<SyncState[]>([]);
   const audits = ref<AuditLog[]>([]);
@@ -314,7 +316,15 @@ function createAdminConsoleState() {
       .slice(0, 6)
       .toUpperCase()}-${stamp}`;
   });
-  const qrCells = computed(() => buildPseudoQrMatrix(`${selectedNetworkId.value}|${accessCode.value}`));
+  const planetDownloadUrl = computed(() => accessArtifacts.value?.planetUrl ?? '');
+  const moonDownloadUrl = computed(() => accessArtifacts.value?.moonUrl ?? '');
+  const artifactExpiresAt = computed(() => accessArtifacts.value?.expiresAt ?? null);
+  const planetQrCells = computed(() =>
+    buildPseudoQrMatrix(planetDownloadUrl.value || `${selectedNetworkId.value}|${accessCode.value}|planet`)
+  );
+  const moonQrCells = computed(() =>
+    buildPseudoQrMatrix(moonDownloadUrl.value || `${selectedNetworkId.value}|${accessCode.value}|moon`)
+  );
 
   const providerCards = computed<ProviderCardModel[]>(() => {
     const actual = new Map(providers.value.map((provider) => [provider.providerName.toLowerCase(), provider]));
@@ -378,7 +388,18 @@ function createAdminConsoleState() {
       return;
     }
     await loadSelectedNetwork(value);
+    await refreshAccessArtifacts();
   });
+
+  watch(
+    () => accessForm.expiryDays,
+    async () => {
+      if (authMode.value !== 'ready' || !selectedNetworkId.value) {
+        return;
+      }
+      await refreshAccessArtifacts();
+    }
+  );
 
   onMounted(async () => {
     await boot();
@@ -629,20 +650,54 @@ function createAdminConsoleState() {
     return `/api/networks/${networkId}/moon-file`;
   }
 
-  function downloadPlantFile() {
+  async function refreshAccessArtifacts() {
     if (!selectedNetworkId.value) {
-      message.warning(t('notifications.warn_select_network_first'));
+      accessArtifacts.value = null;
       return;
     }
-    window.open(buildPlantFileUrl(selectedNetworkId.value), '_blank', 'noopener');
+
+    const expiryDays = Number.parseInt(accessForm.expiryDays, 10);
+    const query = Number.isFinite(expiryDays) ? `?expiryDays=${Math.max(1, expiryDays)}` : '';
+    accessArtifacts.value = await request<AccessArtifacts>(
+      `/api/networks/${selectedNetworkId.value}/access-artifacts${query}`
+    );
   }
 
-  function downloadMoonFile() {
+  async function ensureAccessArtifacts() {
+    if (!accessArtifacts.value) {
+      await refreshAccessArtifacts();
+    }
+    return accessArtifacts.value;
+  }
+
+  async function downloadPlantFile() {
     if (!selectedNetworkId.value) {
       message.warning(t('notifications.warn_select_network_first'));
       return;
     }
-    window.open(buildMoonFileUrl(selectedNetworkId.value), '_blank', 'noopener');
+
+    try {
+      const artifacts = await ensureAccessArtifacts();
+      const targetUrl = artifacts?.planetUrl || buildPlantFileUrl(selectedNetworkId.value);
+      window.open(targetUrl, '_blank', 'noopener');
+    } catch (error) {
+      handleError(error, t('errors.load_access_artifacts_failed'));
+    }
+  }
+
+  async function downloadMoonFile() {
+    if (!selectedNetworkId.value) {
+      message.warning(t('notifications.warn_select_network_first'));
+      return;
+    }
+
+    try {
+      const artifacts = await ensureAccessArtifacts();
+      const targetUrl = artifacts?.moonUrl || buildMoonFileUrl(selectedNetworkId.value);
+      window.open(targetUrl, '_blank', 'noopener');
+    } catch (error) {
+      handleError(error, t('errors.load_access_artifacts_failed'));
+    }
   }
 
   async function applyEasySetup() {
@@ -873,6 +928,7 @@ function createAdminConsoleState() {
 
   function generateAccessArtifact() {
     inviteVersion.value = Date.now();
+    void refreshAccessArtifacts();
     message.info(t('notifications.info_access_artifact_refreshed'));
   }
 
@@ -880,6 +936,15 @@ function createAdminConsoleState() {
     try {
       await navigator.clipboard.writeText(accessCode.value);
       message.success(t('notifications.success_access_code_copied'));
+    } catch {
+      message.warning(t('notifications.warn_clipboard_unavailable'));
+    }
+  }
+
+  async function copyArtifactUrl(url: string) {
+    try {
+      await navigator.clipboard.writeText(url);
+      message.success(t('notifications.success_access_url_copied'));
     } catch {
       message.warning(t('notifications.warn_clipboard_unavailable'));
     }
@@ -955,6 +1020,7 @@ function createAdminConsoleState() {
     accessCode,
     accessForm,
     accessNetworkName,
+    artifactExpiresAt,
     audits,
     authForm,
     authLoading,
@@ -993,9 +1059,12 @@ function createAdminConsoleState() {
     providerCards,
     providerOptions,
     providerWarning,
+    planetDownloadUrl,
+    planetQrCells,
     poolForm,
     providers,
-    qrCells,
+    moonDownloadUrl,
+    moonQrCells,
     recentAudits,
     refreshAll,
     routeForm,
@@ -1021,6 +1090,7 @@ function createAdminConsoleState() {
     userLabel,
     assignIp,
     applyEasySetup,
+    copyArtifactUrl,
     copyAccessCode,
     createNetwork,
     createPool,

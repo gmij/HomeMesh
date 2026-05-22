@@ -164,3 +164,11 @@ export interface ConfigSyncResult {
   syncedAt: string;
   updatedProviderNetworkId?: string | null;
 }
+
+export interface AccessArtifacts {
+  networkId: string;
+  expiryDays: number;
+  expiresAt: string;
+  planetUrl: string;
+  moonUrl: string;
+}

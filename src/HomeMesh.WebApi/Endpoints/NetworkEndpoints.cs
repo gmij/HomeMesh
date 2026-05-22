@@ -1,4 +1,5 @@
-using System.Text.Json;
+using System.Security.Cryptography;
+using System.Text;
 using HomeMesh.Application.Auth;
 using HomeMesh.Application.Networks;
 using HomeMesh.Application.Setup;
@@ -10,6 +11,8 @@ namespace HomeMesh.WebApi.Endpoints;
 public static class NetworkEndpoints
 {
     private const string SessionCookieName = "hm_session";
+    private const string DownloadKindPlanet = "planet";
+    private const string DownloadKindMoon = "moon";
 
     public static IEndpointRouteBuilder MapNetworkEndpoints(this IEndpointRouteBuilder app)
     {
@@ -113,6 +116,41 @@ public static class NetworkEndpoints
             return Results.Ok(network);
         });
 
+        app.MapGet("/api/networks/{networkId}/access-artifacts", async Task<IResult> (
+            string networkId,
+            int? expiryDays,
+            HomeMeshDbContext db,
+            IConfiguration configuration,
+            HttpContext httpContext,
+            CancellationToken cancellationToken) =>
+        {
+            var validation = await ValidateNetworkBindingAsync(db, networkId, cancellationToken);
+            if (validation is not null)
+            {
+                return validation;
+            }
+
+            var clampedDays = Math.Clamp(expiryDays ?? 7, 1, 30);
+            var expiresAt = DateTimeOffset.UtcNow.AddDays(clampedDays);
+            var secret = GetDownloadSecret(configuration);
+
+            var planetToken = CreateDownloadToken(networkId, DownloadKindPlanet, expiresAt, secret);
+            var moonToken = CreateDownloadToken(networkId, DownloadKindMoon, expiresAt, secret);
+
+            var baseUrl = $"{httpContext.Request.Scheme}://{httpContext.Request.Host}";
+            var planetUrl = $"{baseUrl}/api/public/download/planet?token={Uri.EscapeDataString(planetToken)}";
+            var moonUrl = $"{baseUrl}/api/public/download/moon?token={Uri.EscapeDataString(moonToken)}";
+
+            return Results.Ok(new
+            {
+                networkId,
+                expiresAt,
+                expiryDays = clampedDays,
+                planetUrl,
+                moonUrl
+            });
+        });
+
         app.MapGet("/api/networks/{networkId}/plant-file", async Task<IResult> (string networkId, HomeMeshDbContext db, CancellationToken cancellationToken) =>
         {
             var network = await db.Networks.FirstOrDefaultAsync(x => x.Id == networkId, cancellationToken);
@@ -145,20 +183,71 @@ public static class NetworkEndpoints
 
         app.MapGet("/api/networks/{networkId}/moon-file", async Task<IResult> (string networkId, HomeMeshDbContext db, CancellationToken cancellationToken) =>
         {
-            var network = await db.Networks.FirstOrDefaultAsync(x => x.Id == networkId, cancellationToken);
-            if (network is null)
+            var validation = await ValidateNetworkBindingAsync(db, networkId, cancellationToken);
+            if (validation is not null)
             {
-                return Results.NotFound(new { error = "Network not found." });
+                return validation;
             }
 
-            var binding = await db.NetworkProviderBindings
-                .Where(x => x.NetworkId == networkId)
-                .OrderByDescending(x => x.IsPrimary)
-                .FirstOrDefaultAsync(cancellationToken);
-
-            if (binding is null)
+            var moonDirectory = "/app/dist";
+            if (!Directory.Exists(moonDirectory))
             {
-                return Results.NotFound(new { error = "Network provider binding not found." });
+                return Results.NotFound(new { error = "Moon file directory was not found." });
+            }
+
+            var moonFilePath = Directory
+                .GetFiles(moonDirectory, "*.moon")
+                .OrderByDescending(File.GetLastWriteTimeUtc)
+                .FirstOrDefault();
+
+            if (string.IsNullOrWhiteSpace(moonFilePath))
+            {
+                return Results.NotFound(new { error = "Moon file not found. Please wait for container initialization or regenerate it." });
+            }
+
+            var moonFileName = Path.GetFileName(moonFilePath);
+            return Results.File(
+                await File.ReadAllBytesAsync(moonFilePath, cancellationToken),
+                "application/octet-stream",
+                moonFileName);
+        });
+
+        app.MapGet("/api/public/download/planet", async Task<IResult> (string token, HomeMeshDbContext db, IConfiguration configuration, CancellationToken cancellationToken) =>
+        {
+            if (!TryValidateDownloadToken(token, DownloadKindPlanet, configuration, out var payload, out var error))
+            {
+                return Results.Unauthorized();
+            }
+
+            var validation = await ValidateNetworkBindingAsync(db, payload.NetworkId, cancellationToken);
+            if (validation is not null)
+            {
+                return validation;
+            }
+
+            var planetPath = "/app/dist/planet";
+            if (!File.Exists(planetPath))
+            {
+                return Results.NotFound(new { error = "Planet file not found. Please wait for container initialization or regenerate it." });
+            }
+
+            return Results.File(
+                await File.ReadAllBytesAsync(planetPath, cancellationToken),
+                "application/octet-stream",
+                "planet");
+        });
+
+        app.MapGet("/api/public/download/moon", async Task<IResult> (string token, HomeMeshDbContext db, IConfiguration configuration, CancellationToken cancellationToken) =>
+        {
+            if (!TryValidateDownloadToken(token, DownloadKindMoon, configuration, out var payload, out var error))
+            {
+                return Results.Unauthorized();
+            }
+
+            var validation = await ValidateNetworkBindingAsync(db, payload.NetworkId, cancellationToken);
+            if (validation is not null)
+            {
+                return validation;
             }
 
             var moonDirectory = "/app/dist";
@@ -202,4 +291,143 @@ public static class NetworkEndpoints
     {
         return exception is HttpRequestException or IOException or TaskCanceledException;
     }
+
+    private static async Task<IResult?> ValidateNetworkBindingAsync(HomeMeshDbContext db, string networkId, CancellationToken cancellationToken)
+    {
+        var network = await db.Networks.FirstOrDefaultAsync(x => x.Id == networkId, cancellationToken);
+        if (network is null)
+        {
+            return Results.NotFound(new { error = "Network not found." });
+        }
+
+        var binding = await db.NetworkProviderBindings
+            .Where(x => x.NetworkId == networkId)
+            .OrderByDescending(x => x.IsPrimary)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (binding is null)
+        {
+            return Results.NotFound(new { error = "Network provider binding not found." });
+        }
+
+        return null;
+    }
+
+    private static string CreateDownloadToken(string networkId, string kind, DateTimeOffset expiresAt, string secret)
+    {
+        var payload = $"{networkId}|{kind}|{expiresAt.ToUnixTimeSeconds()}";
+        var payloadBytes = Encoding.UTF8.GetBytes(payload);
+        var signatureBytes = ComputeHmac(payloadBytes, secret);
+        return $"{ToBase64Url(payloadBytes)}.{ToBase64Url(signatureBytes)}";
+    }
+
+    private static bool TryValidateDownloadToken(
+        string token,
+        string expectedKind,
+        IConfiguration configuration,
+        out DownloadTokenPayload payload,
+        out string error)
+    {
+        payload = default;
+        error = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            error = "Missing token.";
+            return false;
+        }
+
+        var parts = token.Split('.', 2, StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length != 2)
+        {
+            error = "Invalid token format.";
+            return false;
+        }
+
+        byte[] payloadBytes;
+        byte[] signatureBytes;
+        try
+        {
+            payloadBytes = FromBase64Url(parts[0]);
+            signatureBytes = FromBase64Url(parts[1]);
+        }
+        catch
+        {
+            error = "Invalid token encoding.";
+            return false;
+        }
+
+        var expectedSignature = ComputeHmac(payloadBytes, GetDownloadSecret(configuration));
+        if (!CryptographicOperations.FixedTimeEquals(signatureBytes, expectedSignature))
+        {
+            error = "Invalid token signature.";
+            return false;
+        }
+
+        var payloadText = Encoding.UTF8.GetString(payloadBytes);
+        var payloadParts = payloadText.Split('|', 3, StringSplitOptions.None);
+        if (payloadParts.Length != 3 || !long.TryParse(payloadParts[2], out var expiresUnix))
+        {
+            error = "Invalid token payload.";
+            return false;
+        }
+
+        if (!string.Equals(payloadParts[1], expectedKind, StringComparison.OrdinalIgnoreCase))
+        {
+            error = "Token type mismatch.";
+            return false;
+        }
+
+        var expiresAt = DateTimeOffset.FromUnixTimeSeconds(expiresUnix);
+        if (expiresAt <= DateTimeOffset.UtcNow)
+        {
+            error = "Token expired.";
+            return false;
+        }
+
+        payload = new DownloadTokenPayload(payloadParts[0], payloadParts[1], expiresAt);
+        return true;
+    }
+
+    private static string GetDownloadSecret(IConfiguration configuration)
+    {
+        return configuration["PublicDownloadSecret"]
+            ?? Environment.GetEnvironmentVariable("PUBLIC_DOWNLOAD_SECRET")
+            ?? "homemesh-public-download-secret-change-me";
+    }
+
+    private static byte[] ComputeHmac(byte[] payload, string secret)
+    {
+        using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(secret));
+        return hmac.ComputeHash(payload);
+    }
+
+    private static string ToBase64Url(byte[] bytes)
+    {
+        return Convert.ToBase64String(bytes)
+            .TrimEnd('=')
+            .Replace('+', '-')
+            .Replace('/', '_');
+    }
+
+    private static byte[] FromBase64Url(string value)
+    {
+        var base64 = value
+            .Replace('-', '+')
+            .Replace('_', '/');
+
+        switch (base64.Length % 4)
+        {
+            case 2:
+                base64 += "==";
+                break;
+            case 3:
+                base64 += "=";
+                break;
+        }
+
+        return Convert.FromBase64String(base64);
+    }
+
+    private readonly record struct DownloadTokenPayload(string NetworkId, string Kind, DateTimeOffset ExpiresAt);
 }

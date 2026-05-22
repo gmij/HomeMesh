@@ -50,5 +50,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Publish WebApi for Docker context
+        run: dotnet publish src/HomeMesh.WebApi/HomeMesh.WebApi.csproj --configuration Release --output artifacts/publish/webapi -p:SkipAdminConsoleBuild=true --verbosity minimal
+
       - name: Build Docker image
-        run: docker build -t homemesh-controller:ci .
+        run: docker build -f deploy/docker/Dockerfile -t homemesh-controller:ci .

@@ -81,20 +81,48 @@
           <article class="panel-card panel-card--qr">
             <div class="panel-card__header">
               <h3>{{ $t('access.qr_section') }}</h3>
-              <span>{{ $t('access.qr_meta') }}</span>
+              <span>
+                {{ $t('access.qr_meta') }}
+                <template v-if="artifactExpiresAt">
+                  · {{ $t('access.expires_at') }} {{ artifactExpiresAt }}
+                </template>
+              </span>
             </div>
 
             <div class="qr-shell">
-              <div class="qr-matrix">
-                <div
-                  v-for="(cell, index) in qrCells"
-                  :key="index"
-                  class="qr-cell"
-                  :class="{ active: cell }"
-                ></div>
+              <div>
+                <strong>{{ $t('access.download_planet_button') }}</strong>
+                <div class="qr-matrix" style="margin-top: 8px">
+                  <div
+                    v-for="(cell, index) in planetQrCells"
+                    :key="`planet-${index}`"
+                    class="qr-cell"
+                    :class="{ active: cell }"
+                  ></div>
+                </div>
+                <div class="access-code-card" style="margin-top: 10px">
+                  <code>{{ planetUrl || '-' }}</code>
+                  <a-button size="small" :icon="h(CopyOutlined)" :disabled="!planetUrl" @click="emit('copy-url', planetUrl)" />
+                </div>
               </div>
 
-              <div class="qr-copy">
+              <div style="margin-top: 18px">
+                <strong>{{ $t('access.download_moon_button') }}</strong>
+                <div class="qr-matrix" style="margin-top: 8px">
+                  <div
+                    v-for="(cell, index) in moonQrCells"
+                    :key="`moon-${index}`"
+                    class="qr-cell"
+                    :class="{ active: cell }"
+                  ></div>
+                </div>
+                <div class="access-code-card" style="margin-top: 10px">
+                  <code>{{ moonUrl || '-' }}</code>
+                  <a-button size="small" :icon="h(CopyOutlined)" :disabled="!moonUrl" @click="emit('copy-url', moonUrl)" />
+                </div>
+              </div>
+
+              <div class="qr-copy" style="margin-top: 18px">
                 <strong>{{ accessNetworkName }}</strong>
                 <div class="access-code-card">
                   <code>{{ accessCode }}</code>
@@ -129,9 +157,13 @@ defineProps<{
     label: string;
     autoApprove: boolean;
   };
+  artifactExpiresAt: string | null;
   accessNetworkName: string;
   accessCode: string;
-  qrCells: boolean[];
+  planetUrl: string;
+  moonUrl: string;
+  planetQrCells: boolean[];
+  moonQrCells: boolean[];
   showRail?: boolean;
 }>();
 
@@ -142,6 +174,7 @@ const emit = defineEmits<{
   'generate-access-artifact': [];
   'download-plant-file': [];
   'download-moon-file': [];
+  'copy-url': [value: string];
   'copy-access-code': [];
 }>();
 

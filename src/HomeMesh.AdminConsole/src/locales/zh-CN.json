@@ -205,8 +205,9 @@
     "download_file_button": "下载接入文件",
     "download_planet_button": "下载 planet",
     "download_moon_button": "下载 moon",
+    "expires_at": "有效期至",
     "qr_section": "扫码接入",
-    "qr_meta": "仅用于 HomeMesh 辅助展示，不替代 ZeroTier 原生加网步骤",
+    "qr_meta": "右侧 URL 与二维码为临时公开下载地址（无需登录）",
     "qr_platforms": "支持 Windows / Android / Linux 客户端",
     "copy_code": "复制",
     "expiry_1d": "1 天",
@@ -348,8 +349,9 @@
     "success_config_sync_completed": "{provider} 配置同步已完成。",
     "success_member_auth_updated": "{member} 的授权状态已更新。",
     "success_member_ip_saved": "{member} 的 IP 分配已保存。",
-    "info_access_artifact_refreshed": "接入码和二维码预览已刷新，接入文件下载仍使用后端实时接口。",
+    "info_access_artifact_refreshed": "已刷新临时下载 URL 与二维码。",
     "success_access_code_copied": "接入码已复制。",
+    "success_access_url_copied": "下载链接已复制。",
     "warn_clipboard_unavailable": "当前环境不可用剪贴板，请手动复制接入码。"
   },
   "errors": {
@@ -371,7 +373,8 @@
     "sync_config_failed": "同步配置失败",
     "update_member_authorization_failed": "更新成员授权失败",
     "save_member_ip_failed": "保存成员 IP 分配失败",
-    "load_audit_logs_failed": "加载审计日志失败"
+    "load_audit_logs_failed": "加载审计日志失败",
+    "load_access_artifacts_failed": "生成接入下载链接失败"
   },
   "common": {
     "no_records": "暂无记录",

@@ -158,6 +158,7 @@ static bool RequiresAdminSession(PathString path)
     if (path.StartsWithSegments("/api/auth")) return false;
     if (path.StartsWithSegments("/api/setup")) return false;
     if (path.StartsWithSegments("/api/join")) return false;
+    if (path.StartsWithSegments("/api/public")) return false;
     return true;
 }
 

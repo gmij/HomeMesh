@@ -205,8 +205,9 @@
     "download_file_button": "Download Onboarding File",
     "download_planet_button": "Download planet",
     "download_moon_button": "Download moon",
+    "expires_at": "Expires at",
     "qr_section": "QR Code Entry",
-    "qr_meta": "For HomeMesh helper display only, not a replacement for native ZeroTier join steps",
+    "qr_meta": "URLs and QR codes on the right are temporary public download links (no login required)",
     "qr_platforms": "Supports Windows / Android / Linux clients",
     "copy_code": "Copy",
     "expiry_1d": "1 Day",
@@ -348,8 +349,9 @@
     "success_config_sync_completed": "{provider} config sync completed.",
     "success_member_auth_updated": "{member} authorization updated.",
     "success_member_ip_saved": "{member} IP assignments saved.",
-    "info_access_artifact_refreshed": "Access code and QR preview refreshed. Plant file download still uses the live backend endpoint.",
+    "info_access_artifact_refreshed": "Temporary download URLs and QR codes refreshed.",
     "success_access_code_copied": "Access code copied.",
+    "success_access_url_copied": "Download URL copied.",
     "warn_clipboard_unavailable": "Clipboard is not available in this environment. Please copy the access code manually."
   },
   "errors": {
@@ -371,7 +373,8 @@
     "sync_config_failed": "Failed to sync config",
     "update_member_authorization_failed": "Failed to update member authorization",
     "save_member_ip_failed": "Failed to save member IP assignments",
-    "load_audit_logs_failed": "Failed to load audit logs"
+    "load_audit_logs_failed": "Failed to load audit logs",
+    "load_access_artifacts_failed": "Failed to generate access download links"
   },
   "common": {
     "no_records": "No records yet",

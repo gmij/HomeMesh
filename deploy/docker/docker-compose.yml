@@ -8,7 +8,7 @@ services:
     ports:
       - "19993:9993/udp"  # ZeroTier P2P 流量（避开宿主机 9993，正式部署时改回 9993:9993/udp）
       - "19993:9993"       # ZeroTier 本地 HTTP 控制 API（避开宿主机 9993）
-      - "8080:8080"        # HomeMesh WebApi
+      - "15555:8080"        # HomeMesh WebApi
     volumes:
       - homemesh-data:/app/data          # SQLite 数据库
       - homemesh-zerotier:/var/lib/zerotier-one  # ZeroTier 身份与配置
