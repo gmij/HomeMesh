@@ -41,9 +41,26 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository_owner }}/homemesh-controller
           tags: |
-            type=raw,value=latest,enable=${{ github.event_name == 'workflow_dispatch' }}
+            type=raw,value=latest,enable=${{ github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v') }}
             type=ref,event=tag
             type=sha
+
+      - name: Build Docker image for validation
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: deploy/docker/Dockerfile
+          load: true
+          tags: homemesh-controller:release-check
+          cache-from: type=gha,scope=docker-release
+          cache-to: type=gha,mode=max,scope=docker-release
+
+      - name: Smoke test release image
+        run: |
+          docker run --rm --entrypoint /bin/sh homemesh-controller:release-check -lc "\
+            test -f /app/HomeMesh.WebApi.dll && \
+            test -f /app/wwwroot/index.html && \
+            test -x /usr/local/bin/mkworld"
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v7
@@ -53,3 +70,5 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=docker-release
+          cache-to: type=gha,mode=max,scope=docker-release

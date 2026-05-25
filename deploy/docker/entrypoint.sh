@@ -41,7 +41,11 @@ generate_planet_files() {
     mkdir -p moons.d "${ARTIFACTS_PATH}"
     cp ./*.moon moons.d/
 
-    mkworld
+    if ! mkworld >/tmp/homemesh-mkworld.log 2>&1; then
+        cat /tmp/homemesh-mkworld.log >&2
+        exit 1
+    fi
+    rm -f /tmp/homemesh-mkworld.log
 
     rm -f "${ARTIFACTS_PATH}/planet" "${ARTIFACTS_PATH}"/*.moon
     mv world.bin "${ARTIFACTS_PATH}/planet"
