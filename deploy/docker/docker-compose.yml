@@ -6,6 +6,10 @@ services:
     build:
       context: ../..
       dockerfile: deploy/docker/Dockerfile
+      args:
+        DEBIAN_MIRROR: ${DEBIAN_MIRROR:-}
+        DEBIAN_SECURITY_MIRROR: ${DEBIAN_SECURITY_MIRROR:-}
+        UBUNTU_MIRROR: ${UBUNTU_MIRROR:-}
     container_name: homemesh-controller
     restart: unless-stopped
     ports:

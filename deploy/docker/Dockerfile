@@ -27,16 +27,43 @@ RUN dotnet publish src/HomeMesh.WebApi/HomeMesh.WebApi.csproj \
     --no-restore \
     --verbosity minimal
 
-FROM debian:bookworm-slim AS mkworld-builder
+FROM mcr.microsoft.com/dotnet/sdk:latest AS mkworld-builder
 
-RUN printf 'deb http://mirrors.ustc.edu.cn/debian bookworm main\n' \
-        > /etc/apt/sources.list \
-    && rm -f /etc/apt/sources.list.d/*.sources \
-    && rm -f /etc/apt/sources.list.d/*.list \
-    && printf 'Acquire::http::Pipeline-Depth "0";\nAcquire::Retries "5";\n' \
+ARG UBUNTU_MIRROR=
+
+RUN printf 'Acquire::http::Pipeline-Depth "0";\nAcquire::Retries "5";\n' \
         > /etc/apt/apt.conf.d/99no-pipeline
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN if [ -f /etc/apt/sources.list.d/ubuntu.sources ]; then \
+        sed -i \
+            -e 's|http://archive.ubuntu.com/ubuntu|https://archive.ubuntu.com/ubuntu|g' \
+            -e 's|http://security.ubuntu.com/ubuntu|https://security.ubuntu.com/ubuntu|g' \
+            /etc/apt/sources.list.d/ubuntu.sources; \
+    fi; \
+    if [ -f /etc/apt/sources.list ]; then \
+        sed -i \
+            -e 's|http://archive.ubuntu.com/ubuntu|https://archive.ubuntu.com/ubuntu|g' \
+            -e 's|http://security.ubuntu.com/ubuntu|https://security.ubuntu.com/ubuntu|g' \
+            /etc/apt/sources.list; \
+    fi; \
+    if [ -n "${UBUNTU_MIRROR}" ] && [ -f /etc/apt/sources.list.d/ubuntu.sources ]; then \
+        sed -i \
+            -e "s|http://archive.ubuntu.com/ubuntu|${UBUNTU_MIRROR}|g" \
+            -e "s|https://archive.ubuntu.com/ubuntu|${UBUNTU_MIRROR}|g" \
+            -e "s|http://security.ubuntu.com/ubuntu|${UBUNTU_MIRROR}|g" \
+            -e "s|https://security.ubuntu.com/ubuntu|${UBUNTU_MIRROR}|g" \
+            /etc/apt/sources.list.d/ubuntu.sources; \
+    fi; \
+    if [ -n "${UBUNTU_MIRROR}" ] && [ -f /etc/apt/sources.list ]; then \
+        sed -i \
+            -e "s|http://archive.ubuntu.com/ubuntu|${UBUNTU_MIRROR}|g" \
+            -e "s|https://archive.ubuntu.com/ubuntu|${UBUNTU_MIRROR}|g" \
+            -e "s|http://security.ubuntu.com/ubuntu|${UBUNTU_MIRROR}|g" \
+            -e "s|https://security.ubuntu.com/ubuntu|${UBUNTU_MIRROR}|g" \
+            /etc/apt/sources.list; \
+    fi
+
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         build-essential cmake curl ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
@@ -65,6 +92,9 @@ RUN cd /zt/attic/world && \
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
 
 ARG TZ=Asia/Shanghai
+ARG DEBIAN_MIRROR=
+ARG DEBIAN_SECURITY_MIRROR=
+ARG UBUNTU_MIRROR=
 ENV TZ=${TZ}
 ENV ASPNETCORE_URLS=http://+:8080
 
@@ -72,24 +102,62 @@ RUN printf 'Acquire::http::Pipeline-Depth "0";\nAcquire::Retries "5";\n' \
         > /etc/apt/apt.conf.d/99no-pipeline; \
     if [ -f /etc/apt/sources.list.d/ubuntu.sources ]; then \
         sed -i \
-            -e 's|http://archive.ubuntu.com/ubuntu|http://mirrors.ustc.edu.cn/ubuntu|g' \
-            -e 's|https://archive.ubuntu.com/ubuntu|http://mirrors.ustc.edu.cn/ubuntu|g' \
-            -e 's|http://security.ubuntu.com/ubuntu|http://mirrors.ustc.edu.cn/ubuntu|g' \
-            -e 's|https://security.ubuntu.com/ubuntu|http://mirrors.ustc.edu.cn/ubuntu|g' \
+            -e 's|http://archive.ubuntu.com/ubuntu|https://archive.ubuntu.com/ubuntu|g' \
+            -e 's|http://security.ubuntu.com/ubuntu|https://security.ubuntu.com/ubuntu|g' \
             /etc/apt/sources.list.d/ubuntu.sources; \
     fi; \
     if [ -f /etc/apt/sources.list.d/debian.sources ]; then \
         sed -i \
-            -e 's|http://deb.debian.org/debian|http://mirrors.ustc.edu.cn/debian|g' \
-            -e 's|http://security.debian.org/debian-security|http://mirrors.ustc.edu.cn/debian-security|g' \
+            -e 's|http://deb.debian.org/debian|https://deb.debian.org/debian|g' \
+            -e 's|http://security.debian.org/debian-security|https://deb.debian.org/debian-security|g' \
             /etc/apt/sources.list.d/debian.sources; \
     fi; \
     if [ -f /etc/apt/sources.list ]; then \
         sed -i \
-            -e 's|http://deb.debian.org/debian|http://mirrors.ustc.edu.cn/debian|g' \
-            -e 's|http://security.debian.org/debian-security|http://mirrors.ustc.edu.cn/debian-security|g' \
-            -e 's|http://archive.ubuntu.com/ubuntu|http://mirrors.ustc.edu.cn/ubuntu|g' \
-            -e 's|http://security.ubuntu.com/ubuntu|http://mirrors.ustc.edu.cn/ubuntu|g' \
+            -e 's|http://deb.debian.org/debian|https://deb.debian.org/debian|g' \
+            -e 's|http://security.debian.org/debian-security|https://deb.debian.org/debian-security|g' \
+            -e 's|http://archive.ubuntu.com/ubuntu|https://archive.ubuntu.com/ubuntu|g' \
+            -e 's|http://security.ubuntu.com/ubuntu|https://security.ubuntu.com/ubuntu|g' \
+            /etc/apt/sources.list; \
+    fi; \
+    if [ -n "${UBUNTU_MIRROR}" ] && [ -f /etc/apt/sources.list.d/ubuntu.sources ]; then \
+        sed -i \
+            -e "s|http://archive.ubuntu.com/ubuntu|${UBUNTU_MIRROR}|g" \
+            -e "s|https://archive.ubuntu.com/ubuntu|${UBUNTU_MIRROR}|g" \
+            -e "s|http://security.ubuntu.com/ubuntu|${UBUNTU_MIRROR}|g" \
+            -e "s|https://security.ubuntu.com/ubuntu|${UBUNTU_MIRROR}|g" \
+            /etc/apt/sources.list.d/ubuntu.sources; \
+    fi; \
+    if [ -n "${DEBIAN_MIRROR}" ] && [ -f /etc/apt/sources.list.d/debian.sources ]; then \
+        sed -i \
+            -e "s|http://deb.debian.org/debian|${DEBIAN_MIRROR}|g" \
+            -e "s|https://deb.debian.org/debian|${DEBIAN_MIRROR}|g" \
+            /etc/apt/sources.list.d/debian.sources; \
+    fi; \
+    if [ -n "${DEBIAN_SECURITY_MIRROR}" ] && [ -f /etc/apt/sources.list.d/debian.sources ]; then \
+        sed -i \
+            -e "s|http://security.debian.org/debian-security|${DEBIAN_SECURITY_MIRROR}|g" \
+            -e "s|https://security.debian.org/debian-security|${DEBIAN_SECURITY_MIRROR}|g" \
+            /etc/apt/sources.list.d/debian.sources; \
+    fi; \
+    if [ -n "${DEBIAN_MIRROR}" ] && [ -f /etc/apt/sources.list ]; then \
+        sed -i \
+            -e "s|http://deb.debian.org/debian|${DEBIAN_MIRROR}|g" \
+            -e "s|https://deb.debian.org/debian|${DEBIAN_MIRROR}|g" \
+            /etc/apt/sources.list; \
+    fi; \
+    if [ -n "${DEBIAN_SECURITY_MIRROR}" ] && [ -f /etc/apt/sources.list ]; then \
+        sed -i \
+            -e "s|http://security.debian.org/debian-security|${DEBIAN_SECURITY_MIRROR}|g" \
+            -e "s|https://security.debian.org/debian-security|${DEBIAN_SECURITY_MIRROR}|g" \
+            /etc/apt/sources.list; \
+    fi; \
+    if [ -n "${UBUNTU_MIRROR}" ] && [ -f /etc/apt/sources.list ]; then \
+        sed -i \
+            -e "s|http://archive.ubuntu.com/ubuntu|${UBUNTU_MIRROR}|g" \
+            -e "s|https://archive.ubuntu.com/ubuntu|${UBUNTU_MIRROR}|g" \
+            -e "s|http://security.ubuntu.com/ubuntu|${UBUNTU_MIRROR}|g" \
+            -e "s|https://security.ubuntu.com/ubuntu|${UBUNTU_MIRROR}|g" \
             /etc/apt/sources.list; \
     fi
 
