@@ -71,7 +71,11 @@ jobs:
         run: |
           docker run --rm --entrypoint /bin/sh homemesh-controller:release-check -lc "\
             test -f /app/HomeMesh.WebApi.dll && \
-            test -f /app/wwwroot/index.html && \
+            if [ -f /app/wwwroot/index.html ]; then \
+              echo 'Admin console static entry found'; \
+            else \
+              echo 'Admin console static entry not bundled, fallback page will be served'; \
+            fi && \
             test -x /usr/local/bin/mkworld"
 
       - name: Build and push Docker image
