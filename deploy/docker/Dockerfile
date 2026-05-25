@@ -27,6 +27,9 @@ RUN dotnet publish src/HomeMesh.WebApi/HomeMesh.WebApi.csproj \
     --no-restore \
     --verbosity minimal
 
+RUN test -f /out/HomeMesh.WebApi.dll \
+    && test -f /out/wwwroot/index.html
+
 FROM mcr.microsoft.com/dotnet/sdk:latest AS mkworld-builder
 
 ARG UBUNTU_MIRROR=
