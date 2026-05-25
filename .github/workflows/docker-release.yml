@@ -64,6 +64,7 @@ jobs:
           file: deploy/docker/Dockerfile
           load: true
           tags: homemesh-controller:release-check
+          no-cache-filters: webapi-publish
           cache-from: type=gha,scope=docker-release
           cache-to: type=gha,mode=max,scope=docker-release
 
@@ -71,11 +72,7 @@ jobs:
         run: |
           docker run --rm --entrypoint /bin/sh homemesh-controller:release-check -lc "\
             test -f /app/HomeMesh.WebApi.dll && \
-            if [ -f /app/wwwroot/index.html ]; then \
-              echo 'Admin console static entry found'; \
-            else \
-              echo 'Admin console static entry not bundled, fallback page will be served'; \
-            fi && \
+            test -f /app/wwwroot/index.html && \
             test -x /usr/local/bin/mkworld"
 
       - name: Build and push Docker image
@@ -86,5 +83,6 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          no-cache-filters: webapi-publish
           cache-from: type=gha,scope=docker-release
           cache-to: type=gha,mode=max,scope=docker-release
