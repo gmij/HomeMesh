@@ -23,4 +23,10 @@
     <Exec WorkingDirectory="$(AdminConsoleProjectDir)" Command="npm ci" />
     <Exec WorkingDirectory="$(AdminConsoleProjectDir)" Command="npm run build" />
   </Target>
+  <Target Name="CopyAdminConsoleToPublishOutput" AfterTargets="Publish" Condition="'$(SkipAdminConsoleBuild)' != 'true'">
+    <ItemGroup>
+      <AdminConsolePublishFiles Include="$(AdminConsoleOutputDir)\**\*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(AdminConsolePublishFiles)" DestinationFiles="@(AdminConsolePublishFiles->'$(PublishDir)wwwroot\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+  </Target>
 </Project>
