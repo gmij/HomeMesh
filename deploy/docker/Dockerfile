@@ -17,7 +17,7 @@ COPY src/HomeMesh.Infrastructure/HomeMesh.Infrastructure.csproj src/HomeMesh.Inf
 COPY src/HomeMesh.Protocol.ZeroTier/HomeMesh.Protocol.ZeroTier.csproj src/HomeMesh.Protocol.ZeroTier/
 COPY src/HomeMesh.WebApi/HomeMesh.WebApi.csproj src/HomeMesh.WebApi/
 
-RUN dotnet restore HomeMesh.sln --verbosity minimal
+RUN dotnet restore src/HomeMesh.WebApi/HomeMesh.WebApi.csproj --verbosity minimal
 
 COPY src ./src
 
@@ -105,12 +105,14 @@ RUN curl -fsSL https://install.zerotier.com | bash; \
 COPY --from=mkworld-builder /zt/attic/world/mkworld /usr/local/bin/mkworld
 RUN chmod +x /usr/local/bin/mkworld
 
-RUN mkdir -p /app/dist /app/config /app/data /app/homemesh /var/lib/zerotier-one
+RUN mkdir -p /app/data/artifacts /var/lib/zerotier-one
 
-COPY --from=webapi-publish /out /app/homemesh/
+COPY --from=webapi-publish /out /app/
 
 COPY deploy/docker/entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
+
+WORKDIR /app
 
 EXPOSE 8080
 EXPOSE 9993/udp

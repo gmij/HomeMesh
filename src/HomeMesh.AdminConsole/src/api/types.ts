@@ -33,6 +33,9 @@ export interface ZeroTierTestResult {
   message: string;
   detail?: string;
   checkedAt?: string;
+  online?: boolean;
+  nodeAddress?: string;
+  version?: string;
 }
 
 export interface ZeroTierTokenUploadResult {

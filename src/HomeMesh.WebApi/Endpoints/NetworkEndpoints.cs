@@ -13,6 +13,8 @@ public static class NetworkEndpoints
     private const string SessionCookieName = "hm_session";
     private const string DownloadKindPlanet = "planet";
     private const string DownloadKindMoon = "moon";
+    private static readonly string DownloadArtifactsDirectory = Path.Combine("/app", "data", "artifacts");
+    private static readonly string PlanetFilePath = Path.Combine(DownloadArtifactsDirectory, "planet");
 
     public static IEndpointRouteBuilder MapNetworkEndpoints(this IEndpointRouteBuilder app)
     {
@@ -169,14 +171,13 @@ public static class NetworkEndpoints
                 return Results.NotFound(new { error = "Network provider binding not found." });
             }
 
-            var planetPath = "/app/dist/planet";
-            if (!File.Exists(planetPath))
+            if (!File.Exists(PlanetFilePath))
             {
                 return Results.NotFound(new { error = "Planet file not found. Please wait for container initialization or regenerate it." });
             }
 
             return Results.File(
-                await File.ReadAllBytesAsync(planetPath, cancellationToken),
+                await File.ReadAllBytesAsync(PlanetFilePath, cancellationToken),
                 "application/octet-stream",
                 "planet");
         });
@@ -189,16 +190,12 @@ public static class NetworkEndpoints
                 return validation;
             }
 
-            var moonDirectory = "/app/dist";
-            if (!Directory.Exists(moonDirectory))
+            if (!Directory.Exists(DownloadArtifactsDirectory))
             {
                 return Results.NotFound(new { error = "Moon file directory was not found." });
             }
 
-            var moonFilePath = Directory
-                .GetFiles(moonDirectory, "*.moon")
-                .OrderByDescending(File.GetLastWriteTimeUtc)
-                .FirstOrDefault();
+            var moonFilePath = GetLatestMoonFilePath();
 
             if (string.IsNullOrWhiteSpace(moonFilePath))
             {
@@ -225,14 +222,13 @@ public static class NetworkEndpoints
                 return validation;
             }
 
-            var planetPath = "/app/dist/planet";
-            if (!File.Exists(planetPath))
+            if (!File.Exists(PlanetFilePath))
             {
                 return Results.NotFound(new { error = "Planet file not found. Please wait for container initialization or regenerate it." });
             }
 
             return Results.File(
-                await File.ReadAllBytesAsync(planetPath, cancellationToken),
+                await File.ReadAllBytesAsync(PlanetFilePath, cancellationToken),
                 "application/octet-stream",
                 "planet");
         });
@@ -250,16 +246,12 @@ public static class NetworkEndpoints
                 return validation;
             }
 
-            var moonDirectory = "/app/dist";
-            if (!Directory.Exists(moonDirectory))
+            if (!Directory.Exists(DownloadArtifactsDirectory))
             {
                 return Results.NotFound(new { error = "Moon file directory was not found." });
             }
 
-            var moonFilePath = Directory
-                .GetFiles(moonDirectory, "*.moon")
-                .OrderByDescending(File.GetLastWriteTimeUtc)
-                .FirstOrDefault();
+            var moonFilePath = GetLatestMoonFilePath();
 
             if (string.IsNullOrWhiteSpace(moonFilePath))
             {
@@ -290,6 +282,14 @@ public static class NetworkEndpoints
     private static bool IsProviderConnectionException(Exception exception)
     {
         return exception is HttpRequestException or IOException or TaskCanceledException;
+    }
+
+    private static string? GetLatestMoonFilePath()
+    {
+        return Directory
+            .GetFiles(DownloadArtifactsDirectory, "*.moon")
+            .OrderByDescending(File.GetLastWriteTimeUtc)
+            .FirstOrDefault();
     }
 
     private static async Task<IResult?> ValidateNetworkBindingAsync(HomeMeshDbContext db, string networkId, CancellationToken cancellationToken)

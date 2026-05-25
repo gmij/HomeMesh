@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
-    <AdminConsoleProjectDir>$(MSBuildProjectDirectory)\..\HomeMesh.AdminConsole</AdminConsoleProjectDir>
+    <AdminConsoleProjectDir>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)\..\HomeMesh.AdminConsole'))</AdminConsoleProjectDir>
+    <AdminConsoleOutputDir>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)\wwwroot'))</AdminConsoleOutputDir>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\HomeMesh.Abstractions\HomeMesh.Abstractions.csproj" />
@@ -17,8 +18,8 @@
     <PackageReference Include="Serilog.Settings.Configuration" Version="8.0.4" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.9.0" />
   </ItemGroup>
-  <Target Name="BuildAdminConsoleForPublish" BeforeTargets="ComputeFilesToPublish" Condition="'$(SkipAdminConsoleBuild)' != 'true'">
-    <Message Importance="high" Text="Building HomeMesh admin console into $(MSBuildProjectDirectory)\wwwroot" />
+  <Target Name="BuildAdminConsoleForPublish" BeforeTargets="ResolveCurrentProjectStaticWebAssetsInputs" Condition="'$(SkipAdminConsoleBuild)' != 'true'">
+    <Message Importance="high" Text="Building HomeMesh admin console into $(AdminConsoleOutputDir)" />
     <Exec WorkingDirectory="$(AdminConsoleProjectDir)" Command="npm ci" />
     <Exec WorkingDirectory="$(AdminConsoleProjectDir)" Command="npm run build" />
   </Target>

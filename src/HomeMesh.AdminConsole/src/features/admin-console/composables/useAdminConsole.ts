@@ -45,7 +45,6 @@ import type {
   SyncCardModel
 } from '../types';
 import {
-  buildPseudoQrMatrix,
   friendlyError,
   formatTime,
   isHealthyStatus,
@@ -82,7 +81,6 @@ function createAdminConsoleState() {
   const memberSyncStates = ref<SyncState[]>([]);
   const configSyncStates = ref<SyncState[]>([]);
   const audits = ref<AuditLog[]>([]);
-  const inviteVersion = ref(Date.now());
   const networkProviderNames = reactive<Record<string, string>>({});
   const memberIpValues = reactive<Record<string, string>>({});
 
@@ -130,9 +128,7 @@ function createAdminConsoleState() {
   });
 
   const accessForm = reactive<AccessFormState>({
-    expiryDays: '7',
-    label: '',
-    autoApprove: true
+    expiryDays: '7'
   });
 
   const providerOptions = computed(() => {
@@ -307,24 +303,48 @@ function createAdminConsoleState() {
   });
 
   const accessNetworkName = computed(() => selectedNetwork.value?.name || t('access.no_network_selected'));
-  const accessCode = computed(() => {
-    const networkId = selectedNetworkId.value || 'hmnet-preview';
-    const tag = accessForm.label.trim() || 'client';
-    const stamp = inviteVersion.value.toString(36).slice(-6).toUpperCase();
-    return `HMM-${networkId.slice(-4).toUpperCase()}-${accessForm.expiryDays}D-${tag
-      .replace(/\s+/g, '-')
-      .slice(0, 6)
-      .toUpperCase()}-${stamp}`;
-  });
   const planetDownloadUrl = computed(() => accessArtifacts.value?.planetUrl ?? '');
   const moonDownloadUrl = computed(() => accessArtifacts.value?.moonUrl ?? '');
-  const artifactExpiresAt = computed(() => accessArtifacts.value?.expiresAt ?? null);
-  const planetQrCells = computed(() =>
-    buildPseudoQrMatrix(planetDownloadUrl.value || `${selectedNetworkId.value}|${accessCode.value}|planet`)
+  const artifactExpiresAt = computed(() =>
+    accessArtifacts.value?.expiresAt ? formatTime(accessArtifacts.value.expiresAt) : null
   );
-  const moonQrCells = computed(() =>
-    buildPseudoQrMatrix(moonDownloadUrl.value || `${selectedNetworkId.value}|${accessCode.value}|moon`)
-  );
+
+  function localizeProviderStatus(status?: string | null) {
+    switch ((status ?? '').toLowerCase()) {
+      case 'healthy':
+        return t('auth.health_status_healthy');
+      case 'warning':
+        return t('providers.config_modal.status_warning');
+      case 'error':
+        return t('providers.config_modal.status_error');
+      case 'disabled':
+        return t('providers.config_modal.status_disabled');
+      default:
+        return status ?? t('auth.health_status_unknown');
+    }
+  }
+
+  function localizeZeroTierMessage(message?: string | null) {
+    if (!message) {
+      return 'global.zerotier.com';
+    }
+
+    const nodeMatch = /^ZeroTier node (.+) is (online|offline)\. Version: (.+)\.$/i.exec(message);
+    if (nodeMatch) {
+      const [, address, onlineState, version] = nodeMatch;
+      return t(
+        onlineState.toLowerCase() === 'offline'
+          ? 'providers.config_modal.node_summary_offline'
+          : 'providers.config_modal.node_summary_online',
+        {
+          address,
+          version
+        }
+      );
+    }
+
+    return message;
+  }
 
   const providerCards = computed<ProviderCardModel[]>(() => {
     const actual = new Map(providers.value.map((provider) => [provider.providerName.toLowerCase(), provider]));
@@ -341,8 +361,8 @@ function createAdminConsoleState() {
         description: zeroTierHealthy
           ? t('providers.card.zerotier_connected')
           : t('providers.card.zerotier_issue'),
-        status: zeroTier?.status ?? t('auth.health_status_unknown'),
-        controlPlane: zeroTier?.message || 'global.zerotier.com',
+        status: localizeProviderStatus(zeroTier?.status),
+        controlPlane: localizeZeroTierMessage(zeroTier?.message),
         networkId: activeBinding?.provider === 'ZeroTier' ? activeBinding.providerNetworkId : '-',
         actionLabel: t('providers.card.manage_config'),
         actionType: 'primary',
@@ -926,21 +946,6 @@ function createAdminConsoleState() {
     }
   }
 
-  function generateAccessArtifact() {
-    inviteVersion.value = Date.now();
-    void refreshAccessArtifacts();
-    message.info(t('notifications.info_access_artifact_refreshed'));
-  }
-
-  async function copyAccessCode() {
-    try {
-      await navigator.clipboard.writeText(accessCode.value);
-      message.success(t('notifications.success_access_code_copied'));
-    } catch {
-      message.warning(t('notifications.warn_clipboard_unavailable'));
-    }
-  }
-
   async function copyArtifactUrl(url: string) {
     try {
       await navigator.clipboard.writeText(url);
@@ -975,11 +980,7 @@ function createAdminConsoleState() {
     dnsForm[field] = String(value);
   }
 
-  function updateAccessForm(field: 'expiryDays' | 'label' | 'autoApprove', value: string | boolean) {
-    if (field === 'autoApprove') {
-      accessForm.autoApprove = Boolean(value);
-      return;
-    }
+  function updateAccessForm(field: 'expiryDays', value: string | boolean) {
     accessForm[field] = String(value);
   }
 
@@ -1017,7 +1018,6 @@ function createAdminConsoleState() {
   }
 
   return {
-    accessCode,
     accessForm,
     accessNetworkName,
     artifactExpiresAt,
@@ -1043,7 +1043,6 @@ function createAdminConsoleState() {
     easySetupLoading,
     easySetupModalOpen,
     formattedLastAudit,
-    generateAccessArtifact,
     healthStatus,
     loadAudits,
     logout,
@@ -1060,11 +1059,9 @@ function createAdminConsoleState() {
     providerOptions,
     providerWarning,
     planetDownloadUrl,
-    planetQrCells,
     poolForm,
     providers,
     moonDownloadUrl,
-    moonQrCells,
     recentAudits,
     refreshAll,
     routeForm,
@@ -1091,7 +1088,6 @@ function createAdminConsoleState() {
     assignIp,
     applyEasySetup,
     copyArtifactUrl,
-    copyAccessCode,
     createNetwork,
     createPool,
     createRoute,

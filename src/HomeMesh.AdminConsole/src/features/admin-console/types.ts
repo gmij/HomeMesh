@@ -119,6 +119,4 @@ export interface DnsFormState {
 
 export interface AccessFormState {
   expiryDays: string;
-  label: string;
-  autoApprove: boolean;
 }

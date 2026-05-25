@@ -6,23 +6,6 @@
         <h2>{{ $t('access.title') }}</h2>
         <p>{{ $t('access.description') }}</p>
       </div>
-      <div class="section-tools">
-        <a-button
-          type="primary"
-          :icon="h(DownloadOutlined)"
-          :disabled="!selectedNetworkId"
-          @click="emit('download-plant-file')"
-        >
-          {{ $t('access.download_planet_button') }}
-        </a-button>
-        <a-button
-          :icon="h(DownloadOutlined)"
-          :disabled="!selectedNetworkId"
-          @click="emit('download-moon-file')"
-        >
-          {{ $t('access.download_moon_button') }}
-        </a-button>
-      </div>
     </div>
 
     <div class="workspace-frame" :class="{ 'workspace-frame--solo': !showRail }">
@@ -53,81 +36,98 @@
                 :options="expiryOptions"
                 @update:value="onExpiryChange"
               />
-              <a-input
-                :value="accessForm.label"
-                :placeholder="$t('access.device_placeholder')"
-                @update:value="emit('update:access-form', 'label', $event)"
-              />
-              <a-checkbox
-                :checked="accessForm.autoApprove"
-                @update:checked="emit('update:access-form', 'autoApprove', $event)"
-              >
-                {{ $t('access.auto_approve') }}
-              </a-checkbox>
-              <div class="inline-actions">
-                <a-button type="primary" @click="emit('generate-access-artifact')">
-                  {{ $t('access.generate_code') }}
-                </a-button>
-                <a-button :disabled="!selectedNetworkId" @click="emit('download-plant-file')">
-                  {{ $t('access.download_planet_button') }}
-                </a-button>
-                <a-button :disabled="!selectedNetworkId" @click="emit('download-moon-file')">
-                  {{ $t('access.download_moon_button') }}
-                </a-button>
-              </div>
             </div>
           </article>
 
           <article class="panel-card panel-card--qr">
             <div class="panel-card__header">
               <h3>{{ $t('access.qr_section') }}</h3>
-              <span>
-                {{ $t('access.qr_meta') }}
-                <template v-if="artifactExpiresAt">
-                  · {{ $t('access.expires_at') }} {{ artifactExpiresAt }}
-                </template>
-              </span>
+              <div class="panel-card__meta panel-card__meta--right">
+                <span>{{ $t('access.qr_meta') }}</span>
+                <span v-if="artifactExpiresAt" class="panel-card__expiry">
+                  {{ $t('access.expires_at') }} {{ artifactExpiresAt }}
+                </span>
+              </div>
             </div>
 
             <div class="qr-shell">
-              <div>
-                <strong>{{ $t('access.download_planet_button') }}</strong>
-                <div class="qr-matrix" style="margin-top: 8px">
-                  <div
-                    v-for="(cell, index) in planetQrCells"
-                    :key="`planet-${index}`"
-                    class="qr-cell"
-                    :class="{ active: cell }"
-                  ></div>
+              <div class="qr-artifact-grid">
+                <div class="qr-artifact-card">
+                  <div class="qr-artifact-card__header">
+                    <strong>planet</strong>
+                    <div class="qr-artifact-actions">
+                      <a-dropdown-button
+                        size="small"
+                        :icon="h(DownOutlined)"
+                        :disabled="!selectedNetworkId"
+                        @click="emit('download-plant-file')"
+                      >
+                        <DownloadOutlined />
+                        {{ $t('access.download_planet_button') }}
+                        <template #overlay>
+                          <a-menu>
+                            <a-menu-item
+                              key="copy-planet-url"
+                              :disabled="!planetUrl"
+                              @click="emit('copy-url', planetUrl)"
+                            >
+                              <CopyOutlined />
+                              <span>{{ $t('access.copy_url_button') }}</span>
+                            </a-menu-item>
+                          </a-menu>
+                        </template>
+                      </a-dropdown-button>
+                    </div>
+                  </div>
+
+                  <QrCodeImage
+                    :value="planetUrl"
+                    :alt="$t('access.download_planet_button')"
+                    :empty-text="$t('access.qr_link_hint')"
+                  />
+
+                  <p class="qr-link-hint">{{ $t('access.qr_link_hint') }}</p>
                 </div>
-                <div class="access-code-card" style="margin-top: 10px">
-                  <code>{{ planetUrl || '-' }}</code>
-                  <a-button size="small" :icon="h(CopyOutlined)" :disabled="!planetUrl" @click="emit('copy-url', planetUrl)" />
+
+                <div class="qr-artifact-card">
+                  <div class="qr-artifact-card__header">
+                    <strong>moon</strong>
+                    <div class="qr-artifact-actions">
+                      <a-dropdown-button
+                        size="small"
+                        :icon="h(DownOutlined)"
+                        :disabled="!selectedNetworkId"
+                        @click="emit('download-moon-file')"
+                      >
+                        <DownloadOutlined />
+                        {{ $t('access.download_moon_button') }}
+                        <template #overlay>
+                          <a-menu>
+                            <a-menu-item
+                              key="copy-moon-url"
+                              :disabled="!moonUrl"
+                              @click="emit('copy-url', moonUrl)"
+                            >
+                              <CopyOutlined />
+                              <span>{{ $t('access.copy_url_button') }}</span>
+                            </a-menu-item>
+                          </a-menu>
+                        </template>
+                      </a-dropdown-button>
+                    </div>
+                  </div>
+
+                  <QrCodeImage
+                    :value="moonUrl"
+                    :alt="$t('access.download_moon_button')"
+                    :empty-text="$t('access.qr_link_hint')"
+                  />
+
+                  <p class="qr-link-hint">{{ $t('access.qr_link_hint') }}</p>
                 </div>
               </div>
 
-              <div style="margin-top: 18px">
-                <strong>{{ $t('access.download_moon_button') }}</strong>
-                <div class="qr-matrix" style="margin-top: 8px">
-                  <div
-                    v-for="(cell, index) in moonQrCells"
-                    :key="`moon-${index}`"
-                    class="qr-cell"
-                    :class="{ active: cell }"
-                  ></div>
-                </div>
-                <div class="access-code-card" style="margin-top: 10px">
-                  <code>{{ moonUrl || '-' }}</code>
-                  <a-button size="small" :icon="h(CopyOutlined)" :disabled="!moonUrl" @click="emit('copy-url', moonUrl)" />
-                </div>
-              </div>
-
-              <div class="qr-copy" style="margin-top: 18px">
-                <strong>{{ accessNetworkName }}</strong>
-                <div class="access-code-card">
-                  <code>{{ accessCode }}</code>
-                  <a-button size="small" :icon="h(CopyOutlined)" @click="emit('copy-access-code')" />
-                </div>
+              <div class="qr-copy">
                 <p>{{ $t('access.qr_platforms') }}</p>
               </div>
             </div>
@@ -140,10 +140,11 @@
 
 <script setup lang="ts">
 import { h } from 'vue';
-import { CopyOutlined, DownloadOutlined } from '@ant-design/icons-vue';
+import { CopyOutlined, DownloadOutlined, DownOutlined } from '@ant-design/icons-vue';
 
-import type { PrototypeSectionKey, SectionNavItem } from '../../types';
 import { prototypeSections } from '../../constants';
+import type { PrototypeSectionKey, SectionNavItem } from '../../types';
+import QrCodeImage from '../QrCodeImage.vue';
 import WorkspaceRail from '../WorkspaceRail.vue';
 
 defineProps<{
@@ -154,28 +155,20 @@ defineProps<{
   expiryOptions: Array<{ label: string; value: string }>;
   accessForm: {
     expiryDays: string;
-    label: string;
-    autoApprove: boolean;
   };
   artifactExpiresAt: string | null;
-  accessNetworkName: string;
-  accessCode: string;
   planetUrl: string;
   moonUrl: string;
-  planetQrCells: boolean[];
-  moonQrCells: boolean[];
   showRail?: boolean;
 }>();
 
 const emit = defineEmits<{
   navigate: [key: PrototypeSectionKey];
   'update:selected-network-id': [value: string];
-  'update:access-form': [field: 'expiryDays' | 'label' | 'autoApprove', value: string | boolean];
-  'generate-access-artifact': [];
+  'update:access-form': [field: 'expiryDays', value: string | boolean];
   'download-plant-file': [];
   'download-moon-file': [];
   'copy-url': [value: string];
-  'copy-access-code': [];
 }>();
 
 function onNetworkChange(value: unknown) {

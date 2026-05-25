@@ -7,21 +7,15 @@
     :network-options="networkSelectOptions"
     :expiry-options="translatedExpiryOptions"
     :access-form="accessForm"
-    :access-network-name="accessNetworkName"
-    :access-code="accessCode"
     :artifact-expires-at="artifactExpiresAt"
     :planet-url="planetDownloadUrl"
     :moon-url="moonDownloadUrl"
-    :planet-qr-cells="planetQrCells"
-    :moon-qr-cells="moonQrCells"
     @navigate="navigateToSection"
     @update:selected-network-id="selectedNetworkId = $event"
     @update:access-form="updateAccessForm"
-    @generate-access-artifact="generateAccessArtifact"
     @download-plant-file="downloadPlantFile"
     @download-moon-file="downloadMoonFile"
     @copy-url="copyArtifactUrl"
-    @copy-access-code="copyAccessCode"
   />
 </template>
 
@@ -48,20 +42,14 @@ const translatedExpiryOptions = computed(() =>
 );
 
 const {
-  accessCode,
   accessForm,
-  accessNetworkName,
   artifactExpiresAt,
   copyArtifactUrl,
-  copyAccessCode,
   downloadMoonFile,
   downloadPlantFile,
-  generateAccessArtifact,
   moonDownloadUrl,
-  moonQrCells,
   networkSelectOptions,
   planetDownloadUrl,
-  planetQrCells,
   selectedNetworkId,
   updateAccessForm
 } = useAdminConsole();

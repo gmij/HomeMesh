@@ -35,7 +35,7 @@ export function parseCsv(value: string) {
 
 export function formatTime(value?: string | null, mode: 'full' | 'time' = 'full') {
   if (!value) {
-    return '暂无';
+    return 'N/A';
   }
 
   const date = new Date(value);
@@ -93,52 +93,12 @@ export function isHealthyStatus(status?: string) {
 
 export function friendlyError(error: unknown) {
   if (error instanceof ApiError) {
-    return error.message || `接口返回 ${error.status}`;
+    return error.message || `API returned ${error.status}`;
   }
 
   if (error instanceof Error) {
     return error.message;
   }
 
-  return '发生未知错误。';
-}
-
-export function buildPseudoQrMatrix(seed: string) {
-  const size = 21;
-  const values: boolean[] = [];
-
-  for (let y = 0; y < size; y += 1) {
-    for (let x = 0; x < size; x += 1) {
-      const finder = isFinderPattern(x, y, size);
-      if (finder !== null) {
-        values.push(finder);
-        continue;
-      }
-
-      const source = seed.charCodeAt((x * 7 + y * 13) % seed.length) || 0;
-      values.push(((source + x * 3 + y * 5) % 7) < 3);
-    }
-  }
-
-  return values;
-}
-
-function isFinderPattern(x: number, y: number, size: number) {
-  const zones = [
-    [0, 0],
-    [size - 7, 0],
-    [0, size - 7]
-  ];
-
-  for (const [left, top] of zones) {
-    if (x >= left && x < left + 7 && y >= top && y < top + 7) {
-      const dx = x - left;
-      const dy = y - top;
-      const border = dx === 0 || dx === 6 || dy === 0 || dy === 6;
-      const inner = dx >= 2 && dx <= 4 && dy >= 2 && dy <= 4;
-      return border || inner;
-    }
-  }
-
-  return null;
+  return 'Unknown error occurred.';
 }
