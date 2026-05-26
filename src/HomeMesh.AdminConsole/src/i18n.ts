@@ -1,6 +1,5 @@
 import { createI18n } from 'vue-i18n';
-import enUS from './locales/en-US.json';
-import zhCN from './locales/zh-CN.json';
+import messages from '@intlify/unplugin-vue-i18n/messages';
 
 // 获取浏览器的默认语言
 function getDefaultLocale(): string {
@@ -35,13 +34,27 @@ const i18n = createI18n({
   legacy: false,
   locale: getDefaultLocale(),
   fallbackLocale: 'en-US',
-  messages: {
-    'en-US': enUS,
-    'zh-CN': zhCN
-  },
+  messages,
   globalInjection: true,
   missingWarn: false,
   fallbackWarn: false
 });
+
+const originalTranslate = i18n.global.t.bind(i18n.global);
+
+i18n.global.t = ((...args: Parameters<typeof originalTranslate>) => {
+  try {
+    return originalTranslate(...args);
+  } catch (error) {
+    const [key, named] = args;
+    console.error('[i18n] translation failed', {
+      key,
+      named,
+      locale: i18n.global.locale.value
+    }, error);
+
+    return typeof key === 'string' ? key : '';
+  }
+}) as typeof i18n.global.t;
 
 export default i18n;

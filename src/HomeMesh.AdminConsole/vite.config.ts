@@ -37,11 +37,20 @@ function cspSafeDependencies() {
 
 export default defineConfig({
   base: '/',
+  define: {
+    // The locale messages are precompiled to ASTs by unplugin-vue-i18n.
+    // Enabling JIT tells vue-i18n runtime to register the AST message compiler.
+    __INTLIFY_JIT_COMPILATION__: true
+  },
   plugins: [
     cspSafeDependencies(),
     vue(),
     VueI18nPlugin({
-      include: path.resolve(adminConsoleRoot, './src/locales/**')
+      include: path.resolve(adminConsoleRoot, './src/locales/**'),
+      runtimeOnly: true,
+      compositionOnly: true,
+      fullInstall: true,
+      dropMessageCompiler: true
     }),
     Components({
       dts: 'src/components.d.ts',
