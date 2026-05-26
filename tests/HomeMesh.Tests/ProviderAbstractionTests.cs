@@ -1,4 +1,5 @@
 using HomeMesh.Protocol.ZeroTier;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Xunit;
 
@@ -16,7 +17,7 @@ public sealed class ProviderAbstractionTests
 
         using var httpClient = new HttpClient();
         var apiClient = new ZeroTierLocalApiClient(httpClient, options);
-        var provider = new ZeroTierControllerProvider(options, apiClient);
+        var provider = new ZeroTierControllerProvider(options, apiClient, NullLogger<ZeroTierControllerProvider>.Instance);
 
         var status = await provider.GetStatusAsync();
 

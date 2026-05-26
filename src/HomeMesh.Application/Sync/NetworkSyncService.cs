@@ -1,16 +1,19 @@
 using HomeMesh.Abstractions.Providers;
+using HomeMesh.Application.Diagnostics;
 using HomeMesh.Application.Members;
 using HomeMesh.Application.Setup;
 using HomeMesh.Domain.Entities;
 using HomeMesh.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace HomeMesh.Application.Sync;
 
 public sealed class NetworkSyncService(
     HomeMeshDbContext db,
     IEnumerable<ISdwanControllerProvider> providers,
-    MemberService memberService)
+    MemberService memberService,
+    ILogger<NetworkSyncService> logger)
 {
     public async Task<MemberSyncResultDto> SyncMembersAsync(string networkId, CancellationToken cancellationToken = default)
     {
@@ -92,9 +95,37 @@ public sealed class NetworkSyncService(
         }
         catch (Exception ex)
         {
+            logger.LogError(
+                ex,
+                "Failed to sync members for network {NetworkId} via provider {Provider} ({ProviderNetworkId}).",
+                network.Id,
+                binding.Provider,
+                binding.ProviderNetworkId);
+
             state.Status = "Error";
             state.LastError = ex.Message;
             state.LastSyncAt = now;
+
+            db.AuditLogs.Add(new AuditLog
+            {
+                Id = IdGenerator.NewId("audit"),
+                HomeId = network.HomeId,
+                Type = "MembersSyncFailed",
+                Actor = "system",
+                TargetType = "Network",
+                TargetId = network.Id,
+                Message = $"Failed to sync members for network '{network.Name}'.",
+                MetadataJson = ExceptionMetadataSerializer.Serialize(ex, new
+                {
+                    network.Id,
+                    network.Name,
+                    binding.Provider,
+                    binding.ProviderNetworkId,
+                    operation = "SyncMembers"
+                }),
+                CreatedAt = now
+            });
+
             await db.SaveChangesAsync(cancellationToken);
 
             return new MemberSyncResultDto(

@@ -1,13 +1,18 @@
 using System.Text.Json;
 using HomeMesh.Abstractions.Providers;
+using HomeMesh.Application.Diagnostics;
 using HomeMesh.Application.Setup;
 using HomeMesh.Domain.Entities;
 using HomeMesh.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace HomeMesh.Application.Sync;
 
-public sealed class NetworkConfigSyncService(HomeMeshDbContext db, IEnumerable<ISdwanControllerProvider> providers)
+public sealed class NetworkConfigSyncService(
+    HomeMeshDbContext db,
+    IEnumerable<ISdwanControllerProvider> providers,
+    ILogger<NetworkConfigSyncService> logger)
 {
     public async Task<NetworkConfigSyncResultDto> SyncConfigAsync(string networkId, CancellationToken cancellationToken = default)
     {
@@ -98,9 +103,40 @@ public sealed class NetworkConfigSyncService(HomeMeshDbContext db, IEnumerable<I
         }
         catch (Exception ex)
         {
+            logger.LogError(
+                ex,
+                "Failed to sync config for network {NetworkId} via provider {Provider} ({ProviderNetworkId}).",
+                network.Id,
+                binding.Provider,
+                binding.ProviderNetworkId);
+
             state.Status = "Error";
             state.LastError = ex.Message;
             state.LastSyncAt = now;
+
+            db.AuditLogs.Add(new AuditLog
+            {
+                Id = IdGenerator.NewId("audit"),
+                HomeId = network.HomeId,
+                Type = "NetworkConfigSyncFailed",
+                Actor = "system",
+                TargetType = "Network",
+                TargetId = network.Id,
+                Message = $"Failed to sync network config for '{network.Name}'.",
+                MetadataJson = ExceptionMetadataSerializer.Serialize(ex, new
+                {
+                    network.Id,
+                    network.Name,
+                    binding.Provider,
+                    binding.ProviderNetworkId,
+                    routeCount = routes.Count,
+                    ipPoolCount = ipPools.Count,
+                    hasDnsConfig = dnsConfig is not null,
+                    operation = "SyncNetworkConfig"
+                }),
+                CreatedAt = now
+            });
+
             await db.SaveChangesAsync(cancellationToken);
 
             return new NetworkConfigSyncResultDto(

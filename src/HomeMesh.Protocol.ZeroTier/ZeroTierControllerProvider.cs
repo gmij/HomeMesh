@@ -1,11 +1,13 @@
 using HomeMesh.Abstractions.Providers;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace HomeMesh.Protocol.ZeroTier;
 
 public sealed class ZeroTierControllerProvider(
     IOptions<ZeroTierOptions> options,
-    ZeroTierLocalApiClient client) : ISdwanControllerProvider
+    ZeroTierLocalApiClient client,
+    ILogger<ZeroTierControllerProvider> logger) : ISdwanControllerProvider
 {
     private readonly ZeroTierOptions _options = options.Value;
 
@@ -29,6 +31,7 @@ public sealed class ZeroTierControllerProvider(
         }
         catch (Exception ex)
         {
+            logger.LogWarning(ex, "Failed to read ZeroTier provider health status.");
             return new ProviderHealthStatus(ProviderName, "Error", ex.Message, DateTimeOffset.UtcNow);
         }
     }

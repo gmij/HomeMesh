@@ -1,10 +1,12 @@
 using System.Security.Cryptography;
 using System.Text;
 using HomeMesh.Application.Auth;
+using HomeMesh.Application.Diagnostics;
 using HomeMesh.Application.Networks;
 using HomeMesh.Application.Setup;
 using HomeMesh.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace HomeMesh.WebApi.Endpoints;
 
@@ -25,8 +27,15 @@ public static class NetworkEndpoints
             return Results.Ok(new { initialized, authenticated = user is not null, user });
         });
 
-        app.MapPost("/api/auth/login", async Task<IResult> (LoginRequest request, AuthService authService, HttpContext httpContext, CancellationToken cancellationToken) =>
+        app.MapPost("/api/auth/login", async Task<IResult> (
+            LoginRequest request,
+            AuthService authService,
+            HttpContext httpContext,
+            ILoggerFactory loggerFactory,
+            CancellationToken cancellationToken) =>
         {
+            var logger = loggerFactory.CreateLogger("HomeMesh.WebApi.Auth");
+
             try
             {
                 var result = await authService.LoginAsync(request.Username, request.Password, cancellationToken);
@@ -40,9 +49,19 @@ public static class NetworkEndpoints
 
                 return Results.Ok(new { result.Username, result.Role, result.ExpiresAt });
             }
-            catch (InvalidOperationException)
+            catch (InvalidOperationException ex)
             {
-                return Results.Unauthorized();
+                logger.LogWarning(
+                    ex,
+                    "Login failed for username {Username} from {RemoteIp}.",
+                    request.Username?.Trim(),
+                    httpContext.Connection.RemoteIpAddress?.ToString());
+
+                return Results.Json(new
+                {
+                    error = ex.Message,
+                    detail = ExceptionMetadataSerializer.Summarize(ex)
+                }, statusCode: StatusCodes.Status401Unauthorized);
             }
         });
 
@@ -81,8 +100,14 @@ public static class NetworkEndpoints
             return Results.Ok(await networkService.ListAsync(cancellationToken));
         });
 
-        app.MapPost("/api/networks", async Task<IResult> (CreateNetworkRequest request, NetworkService networkService, CancellationToken cancellationToken) =>
+        app.MapPost("/api/networks", async Task<IResult> (
+            CreateNetworkRequest request,
+            NetworkService networkService,
+            ILoggerFactory loggerFactory,
+            CancellationToken cancellationToken) =>
         {
+            var logger = loggerFactory.CreateLogger("HomeMesh.WebApi.Networks");
+
             if (string.IsNullOrWhiteSpace(request.Name))
             {
                 return Results.BadRequest(new { error = "Network name is required." });
@@ -99,6 +124,12 @@ public static class NetworkEndpoints
             }
             catch (Exception ex) when (IsProviderConnectionException(ex))
             {
+                logger.LogError(
+                    ex,
+                    "Provider connection failed while creating network {NetworkName} via provider {Provider}.",
+                    request.Name,
+                    request.Provider);
+
                 return Results.Json(new
                 {
                     error = "Provider connection failed. Check that ZeroTier service is running and the auth token path is correct.",

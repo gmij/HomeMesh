@@ -47,6 +47,24 @@ public sealed class WebApiSmokeTests : IClassFixture<WebApplicationFactory<HomeM
     }
 
     [Fact]
+    public async Task Login_Should_Return_Error_Payload_When_Credentials_Are_Invalid()
+    {
+        using var client = _factory.CreateClient();
+
+        var response = await client.PostAsJsonAsync("/api/auth/login", new
+        {
+            Username = "admin",
+            Password = "wrong-password"
+        });
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<ErrorResponse>();
+        Assert.Equal("Invalid username or password.", payload?.Error);
+        Assert.Equal("InvalidOperationException: Invalid username or password.", payload?.Detail);
+    }
+
+    [Fact]
     public async Task Root_Should_Return_Html()
     {
         using var client = _factory.CreateClient();
@@ -58,4 +76,5 @@ public sealed class WebApiSmokeTests : IClassFixture<WebApplicationFactory<HomeM
     }
 
     private sealed record HealthResponse(string Status, string Service, DateTimeOffset CheckedAt);
+    private sealed record ErrorResponse(string Error, string Detail);
 }

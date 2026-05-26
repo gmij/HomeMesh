@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using HomeMesh.Abstractions.Providers;
+using Microsoft.Extensions.Logging;
 
 namespace HomeMesh.WebApi.Endpoints;
 
@@ -48,8 +49,14 @@ public static class ProviderEndpoints
             return Results.Ok(GetCurrentConfig(configuration));
         });
 
-        app.MapPut("/api/providers/zerotier/config", (UpdateZeroTierConfigRequest request, IConfiguration configuration, IWebHostEnvironment environment) =>
+        app.MapPut("/api/providers/zerotier/config", (
+            UpdateZeroTierConfigRequest request,
+            IConfiguration configuration,
+            IWebHostEnvironment environment,
+            ILoggerFactory loggerFactory) =>
         {
+            var logger = loggerFactory.CreateLogger("HomeMesh.WebApi.ProviderConfig");
+
             if (request.Enabled is null)
             {
                 return Results.BadRequest(new { error = "Enabled is required." });
@@ -72,7 +79,20 @@ public static class ProviderEndpoints
                 request.AuthTokenPath.Trim());
 
             var appsettingsPath = Path.Combine(environment.ContentRootPath, "appsettings.json");
-            SaveConfigToAppSettings(appsettingsPath, config);
+            try
+            {
+                SaveConfigToAppSettings(appsettingsPath, config);
+            }
+            catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException)
+            {
+                logger.LogError(ex, "Failed to save ZeroTier configuration to {AppSettingsPath}.", appsettingsPath);
+
+                return Results.Json(new
+                {
+                    error = "Failed to save provider configuration.",
+                    detail = ex.Message
+                }, statusCode: StatusCodes.Status500InternalServerError);
+            }
 
             return Results.Ok(new
             {
@@ -82,8 +102,13 @@ public static class ProviderEndpoints
             });
         });
 
-        app.MapPost("/api/providers/zerotier/test-config", async (TestZeroTierConfigRequest? request, IConfiguration configuration, CancellationToken cancellationToken) =>
+        app.MapPost("/api/providers/zerotier/test-config", async (
+            TestZeroTierConfigRequest? request,
+            IConfiguration configuration,
+            ILoggerFactory loggerFactory,
+            CancellationToken cancellationToken) =>
         {
+            var logger = loggerFactory.CreateLogger("HomeMesh.WebApi.ProviderDiagnostics");
             var current = GetCurrentConfig(configuration);
             var enabled = request?.Enabled ?? current.Enabled;
             var port = request?.Port ?? current.Port;
@@ -157,6 +182,12 @@ public static class ProviderEndpoints
             }
             catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or IOException)
             {
+                logger.LogWarning(
+                    ex,
+                    "ZeroTier configuration test failed for port {Port} and token path {AuthTokenPath}.",
+                    port,
+                    authTokenPath);
+
                 return Results.Json(new
                 {
                     status = "Error",

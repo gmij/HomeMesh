@@ -106,7 +106,7 @@ import { message } from 'ant-design-vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 
-import { request } from '../api/client';
+import { logClientError, request } from '../api/client';
 import type { ZeroTierConfig, ZeroTierConfigSaveResult, ZeroTierTestResult } from '../api/types';
 import ProvidersSection from '../features/admin-console/components/sections/ProvidersSection.vue';
 import { prototypeNavItems, prototypeSections, sectionPathMap } from '../features/admin-console/constants';
@@ -140,7 +140,8 @@ async function loadConfig() {
     configForm.enabled = config.enabled;
     configForm.port = config.port;
     configForm.authTokenPath = config.authTokenPath;
-  } catch {
+  } catch (error) {
+    logClientError('Failed to load ZeroTier provider configuration.', error);
     message.warning(t('providers.config_modal.load_config_failed'));
   }
 }
@@ -191,6 +192,7 @@ async function saveCurrentConfig() {
       ? t('providers.config_modal.saved_message_restart_required')
       : t('providers.config_modal.saved_message');
   } catch (error) {
+    logClientError('Failed to save ZeroTier provider configuration.', error);
     message.error(error instanceof Error ? error.message : t('providers.config_modal.save_failed'));
   } finally {
     savingConfig.value = false;

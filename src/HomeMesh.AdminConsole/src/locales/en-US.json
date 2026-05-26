@@ -366,7 +366,7 @@
     "info_access_artifact_refreshed": "Temporary download URLs and QR codes refreshed.",
     "success_access_code_copied": "Access code copied.",
     "success_access_url_copied": "Download URL copied.",
-    "warn_clipboard_unavailable": "Clipboard is not available in this environment. Please copy the access code manually."
+    "warn_clipboard_unavailable": "Clipboard is not available in this environment. Please copy the download link manually."
   },
   "errors": {
     "read_auth_status": "Failed to read auth status",

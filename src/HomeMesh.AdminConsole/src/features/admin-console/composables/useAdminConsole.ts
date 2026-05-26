@@ -26,7 +26,7 @@ import type {
   RouteItem,
   SyncState
 } from '../../../api/types';
-import { request, requestMaybe } from '../../../api/client';
+import { logClientError, request, requestMaybe } from '../../../api/client';
 import type {
   AccessFormState,
   AuthFormState,
@@ -428,7 +428,8 @@ function createAdminConsoleState() {
   async function boot() {
     try {
       healthStatus.value = await request<HealthStatus>('/health');
-    } catch {
+    } catch (error) {
+      logClientError('Health check request failed during console boot.', error);
       healthStatus.value = null;
     }
 
@@ -950,7 +951,8 @@ function createAdminConsoleState() {
     try {
       await navigator.clipboard.writeText(url);
       message.success(t('notifications.success_access_url_copied'));
-    } catch {
+    } catch (error) {
+      logClientError('Clipboard write failed while copying access artifact URL.', error);
       message.warning(t('notifications.warn_clipboard_unavailable'));
     }
   }

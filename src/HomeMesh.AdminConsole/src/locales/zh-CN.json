@@ -366,7 +366,7 @@
     "info_access_artifact_refreshed": "已刷新临时下载 URL 与二维码。",
     "success_access_code_copied": "接入码已复制。",
     "success_access_url_copied": "下载链接已复制。",
-    "warn_clipboard_unavailable": "当前环境不可用剪贴板，请手动复制接入码。"
+    "warn_clipboard_unavailable": "当前环境不可用剪贴板，请手动复制下载链接。"
   },
   "errors": {
     "read_auth_status": "读取认证状态失败",

@@ -8,6 +8,10 @@ export class ApiError extends Error {
   }
 }
 
+export function logClientError(context: string, error: unknown) {
+  console.warn(`[HomeMesh] ${context}`, error);
+}
+
 export async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(path, {
     credentials: 'same-origin',
@@ -64,7 +68,8 @@ async function readError(response: Response): Promise<string> {
     const primary = payload.error ?? payload.message;
     const secondary = payload.detail && payload.detail !== '{}' ? payload.detail : undefined;
     return [primary, secondary].filter(Boolean).join(' — ') || text;
-  } catch {
+  } catch (error) {
+    logClientError('Failed to parse API error payload.', error);
     return text;
   }
 }
