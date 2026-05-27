@@ -94,7 +94,7 @@ public sealed class NetworkService(HomeMeshDbContext db, IEnumerable<ISdwanContr
             Name = request.Name.Trim(),
             Cidr = request.Cidr,
             Private = request.Private,
-            V4AssignMode = true,
+            V4AssignMode = false,
             AutoApproveMembers = request.AutoApproveMembers,
             Status = "Created",
             CreatedAt = now,

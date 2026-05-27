@@ -74,7 +74,6 @@
             <a-tab-pane key="members" :tab="$t('network.tabs.members')" />
             <a-tab-pane key="routes" :tab="$t('network.tabs.routes')" />
             <a-tab-pane key="dns" :tab="$t('network.tabs.dns')" />
-            <a-tab-pane key="sync" :tab="$t('network.tabs.sync')" />
             <a-tab-pane key="gateway" :tab="$t('network.tabs.gateway')" />
             <a-tab-pane key="acl" :tab="$t('network.tabs.acl')" />
             <a-tab-pane key="protocol" :tab="$t('network.tabs.protocol')" />
@@ -192,7 +191,7 @@
                           <span>{{ member.providerMemberId }}</span>
                         </div>
                       </td>
-                      <td>{{ member.role }}</td>
+                      <td>{{ normalizeMemberRole(member.role, $t('network.role_device')) }}</td>
                       <td class="ip-cell">
                         <a-input
                           :value="memberIpValues[member.id] ?? parseIpAssignments(member.ipAssignmentsJson).join(', ')"
@@ -211,14 +210,22 @@
                         <span class="online-dot" :class="{ offline: !member.online }"></span>
                         {{ member.online ? $t('network.online') : $t('network.offline') }}
                       </td>
-                      <td>{{ parseTags(member.tagsJson).join(', ') || '-' }}</td>
+                      <td class="ip-cell">
+                        <a-input
+                          :value="memberTagValues[member.id] ?? parseTags(member.tagsJson).join(', ')"
+                          size="small"
+                          :placeholder="$t('network.member_tags_placeholder')"
+                          @update:value="emit('update:member-tag', member.id, $event)"
+                          @pressEnter="emit('assign-ip', member)"
+                        />
+                      </td>
                       <td>
                         <div class="row-actions">
                           <a-button size="small" type="link" @click="emit('toggle-auth', member)">
                             {{ member.authorized ? $t('network.revoke') : $t('network.authorize') }}
                           </a-button>
                           <a-button size="small" type="link" @click="emit('assign-ip', member)">
-                            {{ $t('network.save_ip') }}
+                            {{ $t('network.save_member') }}
                           </a-button>
                         </div>
                       </td>
@@ -351,19 +358,6 @@
             </div>
           </div>
 
-          <div v-else-if="networkTab === 'sync'" class="network-pane">
-            <div class="sync-grid">
-              <article v-for="card in syncCards" :key="card.key" class="sync-card">
-                <div class="sync-card__header">
-                  <strong>{{ card.title }}</strong>
-                  <a-tag :color="statusColor(card.status)">{{ card.status }}</a-tag>
-                </div>
-                <p>{{ card.message }}</p>
-                <small>{{ card.time }}</small>
-              </article>
-            </div>
-          </div>
-
           <div v-else class="network-pane">
             <article class="panel-card panel-card--placeholder">
               <div class="panel-card__header">
@@ -394,11 +388,10 @@ import type {
   NetworkTabKey,
   PlaceholderTabKey,
   PrototypeSectionKey,
-  SectionNavItem,
-  SyncCardModel
+  SectionNavItem
 } from '../../types';
 import { placeholderTitles, prototypeSections } from '../../constants';
-import { parseIpAssignments, parseTags, statusColor } from '../../utils';
+import { normalizeMemberRole, parseIpAssignments, parseTags } from '../../utils';
 import type {
   DnsConfig,
   IpPoolItem,
@@ -425,7 +418,6 @@ defineProps<{
   routes: RouteItem[];
   pools: IpPoolItem[];
   dnsConfig: DnsConfig | null;
-  syncCards: SyncCardModel[];
   deleteLoading: boolean;
   routeForm: {
     target: string;
@@ -441,6 +433,7 @@ defineProps<{
     providerManaged: boolean;
   };
   memberIpValues: Record<string, string>;
+  memberTagValues: Record<string, string>;
   showRail?: boolean;
 }>();
 
@@ -453,6 +446,7 @@ const emit = defineEmits<{
   'sync-config': [];
   'delete-network': [];
   'update:member-ip': [memberId: string, value: string];
+  'update:member-tag': [memberId: string, value: string];
   'toggle-auth': [member: Member];
   'assign-ip': [member: Member];
   'update:route-form': [field: 'target' | 'via', value: string];

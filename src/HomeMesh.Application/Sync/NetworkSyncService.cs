@@ -50,8 +50,16 @@ public sealed class NetworkSyncService(
 
             foreach (var providerMember in providerMembers)
             {
+                var existingMember = await db.NetworkMembers
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(
+                        x => x.NetworkId == networkId && x.Provider == binding.Provider && x.ProviderMemberId == providerMember.ProviderMemberId,
+                        cancellationToken);
+
                 var memberInfo = providerMember;
-                if (network.AutoApproveMembers && !providerMember.Authorized)
+                if (network.AutoApproveMembers
+                    && !providerMember.Authorized
+                    && !MemberProviderState.IsManualAuthorizationBlocked(existingMember?.ProviderRawJson))
                 {
                     memberInfo = await provider.UpdateMemberAsync(
                         binding.ProviderNetworkId,

@@ -14,12 +14,12 @@
     :routes="routes"
     :pools="pools"
     :dns-config="dnsConfig"
-    :sync-cards="syncCards"
     :delete-loading="deleteLoading"
     :route-form="{ target: routeForm.target, via: routeForm.via }"
     :pool-form="{ ipRangeStart: poolForm.ipRangeStart, ipRangeEnd: poolForm.ipRangeEnd }"
     :dns-form="dnsForm"
     :member-ip-values="memberIpValues"
+    :member-tag-values="memberTagValues"
     @navigate="navigateToSection"
     @update:selected-network-id="onSelectedNetworkChange"
     @update:network-tab="networkTab = $event"
@@ -28,6 +28,7 @@
     @sync-config="syncConfig"
     @delete-network="deleteNetwork"
     @update:member-ip="onMemberIpInput"
+    @update:member-tag="onMemberTagInput"
     @toggle-auth="toggleMemberAuth"
     @assign-ip="assignIp"
     @update:route-form="updateRouteForm"
@@ -67,10 +68,12 @@ const {
   easySetupModalOpen,
   formattedLastAudit,
   memberIpValues,
+  memberTagValues,
   members,
   networkSelectOptions,
   networkTab,
   onMemberIpInput,
+  onMemberTagInput,
   openNetwork,
   poolForm,
   pools,
@@ -80,7 +83,6 @@ const {
   selectedBinding,
   selectedNetwork,
   selectedNetworkId,
-  syncCards,
   syncConfig,
   syncMembers,
   toggleMemberAuth,

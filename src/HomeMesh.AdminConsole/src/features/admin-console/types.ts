@@ -9,7 +9,6 @@ export type NetworkTabKey =
   | 'members'
   | 'routes'
   | 'dns'
-  | 'sync'
   | 'gateway'
   | 'acl'
   | 'protocol';
@@ -48,14 +47,6 @@ export interface DetailMetric {
   label: string;
   value: string | number;
   meta: string;
-}
-
-export interface SyncCardModel {
-  key: string;
-  title: string;
-  status: string;
-  message: string;
-  time: string;
 }
 
 export interface ProviderCardModel {

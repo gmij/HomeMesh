@@ -95,6 +95,7 @@ public sealed class ZeroTierControllerProvider(
         var patch = new Dictionary<string, object?>();
         if (request.Name is not null) patch["name"] = request.Name;
         if (request.Private.HasValue) patch["private"] = request.Private.Value;
+        if (request.V4AssignMode.HasValue) patch["v4AssignMode"] = new { zt = request.V4AssignMode.Value };
         if (request.Routes is not null) patch["routes"] = request.Routes.Select(x => new { x.Target, x.Via }).ToArray();
         if (request.IpPools is not null) patch["ipAssignmentPools"] = request.IpPools.Select(x => new { x.IpRangeStart, x.IpRangeEnd }).ToArray();
         if (request.DnsConfig is not null) patch["dns"] = new { request.DnsConfig.Domain, request.DnsConfig.Servers };

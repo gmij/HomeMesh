@@ -23,8 +23,7 @@ import type {
   NetworkProviderBinding,
   NetworkSummary,
   ProviderStatus,
-  RouteItem,
-  SyncState
+  RouteItem
 } from '../../../api/types';
 import { logClientError, request, requestMaybe } from '../../../api/client';
 import type {
@@ -41,15 +40,15 @@ import type {
   PoolFormState,
   ProviderCardModel,
   RouteFormState,
-  SummaryMetric,
-  SyncCardModel
+  SummaryMetric
 } from '../types';
 import {
   friendlyError,
   formatTime,
   isHealthyStatus,
   parseCsv,
-  parseIpAssignments
+  parseIpAssignments,
+  parseTags
 } from '../utils';
 
 let sharedState: ReturnType<typeof createAdminConsoleState> | null = null;
@@ -78,11 +77,10 @@ function createAdminConsoleState() {
   const pools = ref<IpPoolItem[]>([]);
   const dnsConfig = ref<DnsConfig | null>(null);
   const accessArtifacts = ref<AccessArtifacts | null>(null);
-  const memberSyncStates = ref<SyncState[]>([]);
-  const configSyncStates = ref<SyncState[]>([]);
   const audits = ref<AuditLog[]>([]);
   const networkProviderNames = reactive<Record<string, string>>({});
   const memberIpValues = reactive<Record<string, string>>({});
+  const memberTagValues = reactive<Record<string, string>>({});
 
   const authForm = reactive<AuthFormState>({
     username: 'admin',
@@ -258,31 +256,11 @@ function createAdminConsoleState() {
         meta: t('network.detail_metrics.provider', { provider: selectedBinding.value?.provider ?? '-' })
       },
       {
-        label: t('network.detail_metrics.sync_tasks'),
-        value: memberSyncStates.value.length + configSyncStates.value.length,
-        meta: t('network.detail_metrics.recent_jobs')
+        label: t('dashboard.status.authorization'),
+        value: members.value.length ? `${members.value.filter((member) => member.authorized).length}/${members.value.length}` : '0/0',
+        meta: t('dashboard.status.authorization_meta')
       }
     ];
-  });
-
-  const syncCards = computed<SyncCardModel[]>(() => {
-    const memberCards = memberSyncStates.value.map((state) => ({
-      key: `member-${state.id}`,
-      title: t('sync.member_title', { provider: state.provider }),
-      status: state.status,
-      message: state.lastError || t('sync.member_healthy'),
-      time: state.lastSyncAt ? formatTime(state.lastSyncAt) : t('sync.not_synced')
-    }));
-
-    const configCards = configSyncStates.value.map((state) => ({
-      key: `config-${state.id}`,
-      title: t('sync.config_title', { provider: state.provider }),
-      status: state.status,
-      message: state.lastError || t('sync.config_healthy'),
-      time: state.lastSyncAt ? formatTime(state.lastSyncAt) : t('sync.not_synced')
-    }));
-
-    return [...memberCards, ...configCards];
   });
 
   const providerWarning = computed(() => {
@@ -546,14 +524,12 @@ function createAdminConsoleState() {
 
   async function loadSelectedNetwork(networkId: string) {
     try {
-      const [detail, memberData, routeData, poolData, dnsData, memberStates, configStates] = await Promise.all([
+      const [detail, memberData, routeData, poolData, dnsData] = await Promise.all([
         request<NetworkDetail>(`/api/networks/${networkId}`),
         request<Member[]>(`/api/networks/${networkId}/members`),
         request<RouteItem[]>(`/api/networks/${networkId}/routes`),
         request<IpPoolItem[]>(`/api/networks/${networkId}/ip-pools`),
-        requestMaybe<DnsConfig>(`/api/networks/${networkId}/dns`),
-        request<SyncState[]>(`/api/networks/${networkId}/members/sync-state`),
-        request<SyncState[]>(`/api/networks/${networkId}/config/sync-state`)
+        requestMaybe<DnsConfig>(`/api/networks/${networkId}/dns`)
       ]);
 
       selectedNetwork.value = detail;
@@ -561,8 +537,6 @@ function createAdminConsoleState() {
       routes.value = routeData;
       pools.value = poolData;
       dnsConfig.value = dnsData;
-      memberSyncStates.value = memberStates;
-      configSyncStates.value = configStates;
       networkProviderNames[networkId] = detail.providerBindings[0]?.provider ?? '-';
       hydrateNetworkForms();
     } catch (error) {
@@ -598,6 +572,7 @@ function createAdminConsoleState() {
 
     for (const member of members.value) {
       memberIpValues[member.id] = parseIpAssignments(member.ipAssignmentsJson).join(', ');
+      memberTagValues[member.id] = parseTags(member.tagsJson).join(', ');
     }
   }
 
@@ -607,8 +582,6 @@ function createAdminConsoleState() {
     routes.value = [];
     pools.value = [];
     dnsConfig.value = null;
-    memberSyncStates.value = [];
-    configSyncStates.value = [];
   }
 
   async function createNetwork() {
@@ -875,7 +848,6 @@ function createAdminConsoleState() {
       });
       await loadSelectedNetwork(selectedNetworkId.value);
       await loadAudits();
-      networkTab.value = 'sync';
       message.success(t('notifications.success_member_sync_completed', { provider: result.provider }));
     } catch (error) {
       handleError(error, t('errors.sync_members_failed'));
@@ -893,7 +865,6 @@ function createAdminConsoleState() {
       });
       await loadSelectedNetwork(selectedNetworkId.value);
       await loadAudits();
-      networkTab.value = 'sync';
       message.success(t('notifications.success_config_sync_completed', { provider: result.provider }));
     } catch (error) {
       handleError(error, t('errors.sync_config_failed'));
@@ -925,17 +896,18 @@ function createAdminConsoleState() {
     }
     try {
       await request(`/api/networks/${selectedNetworkId.value}/members/${member.id}`, {
-        method: 'PATCH',
+        method: 'POST',
         body: JSON.stringify({
-          ipAssignments: parseCsv(memberIpValues[member.id] || '')
+          ipAssignments: parseCsv(memberIpValues[member.id] || ''),
+          tags: parseCsv(memberTagValues[member.id] || '')
         })
       });
 
       await loadSelectedNetwork(selectedNetworkId.value);
       await loadAudits();
-      message.success(t('notifications.success_member_ip_saved', { member: member.name || member.providerMemberId }));
+      message.success(t('notifications.success_member_saved', { member: member.name || member.providerMemberId }));
     } catch (error) {
-      handleError(error, t('errors.save_member_ip_failed'));
+      handleError(error, t('errors.save_member_failed'));
     }
   }
 
@@ -959,6 +931,10 @@ function createAdminConsoleState() {
 
   function onMemberIpInput(memberId: string, value: string) {
     memberIpValues[memberId] = value;
+  }
+
+  function onMemberTagInput(memberId: string, value: string) {
+    memberTagValues[memberId] = value;
   }
 
   function openNetwork(networkId: string) {
@@ -1027,7 +1003,6 @@ function createAdminConsoleState() {
     authForm,
     authLoading,
     authMode,
-    configSyncStates,
     createForm,
     createLoading,
     createModalOpen,
@@ -1049,12 +1024,14 @@ function createAdminConsoleState() {
     loadAudits,
     logout,
     memberIpValues,
+    memberTagValues,
     members,
     networkProviderNames,
     networkSelectOptions,
     networkTab,
     networks,
     onMemberIpInput,
+    onMemberTagInput,
     openNetwork,
     pools,
     providerCards,
@@ -1075,7 +1052,6 @@ function createAdminConsoleState() {
     submitAuth,
     summary,
     summaryMetrics,
-    syncCards,
     syncConfig,
     syncMembers,
     toggleMemberAuth,

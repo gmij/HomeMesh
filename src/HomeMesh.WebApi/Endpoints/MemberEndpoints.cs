@@ -9,6 +9,24 @@ public static class MemberEndpoints
 {
     public static IEndpointRouteBuilder MapMemberEndpoints(this IEndpointRouteBuilder app)
     {
+        static async Task<IResult> UpdateMember(
+            string networkId,
+            string memberId,
+            UpdateMemberRequest request,
+            MemberService memberService,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                var member = await memberService.UpdateAsync(networkId, memberId, request, cancellationToken);
+                return Results.Ok(member);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Results.BadRequest(new { error = ex.Message });
+            }
+        }
+
         app.MapPost("/api/join/{networkId}", async Task<IResult> (
             string networkId,
             JoinNetworkRequest request,
@@ -71,23 +89,9 @@ public static class MemberEndpoints
             return Results.Ok(member);
         });
 
-        app.MapPatch("/api/networks/{networkId}/members/{memberId}", async Task<IResult> (
-            string networkId,
-            string memberId,
-            UpdateMemberRequest request,
-            MemberService memberService,
-            CancellationToken cancellationToken) =>
-        {
-            try
-            {
-                var member = await memberService.UpdateAsync(networkId, memberId, request, cancellationToken);
-                return Results.Ok(member);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Results.BadRequest(new { error = ex.Message });
-            }
-        });
+        app.MapPatch("/api/networks/{networkId}/members/{memberId}", UpdateMember);
+
+        app.MapPost("/api/networks/{networkId}/members/{memberId}", UpdateMember);
 
         app.MapPost("/api/networks/{networkId}/members/{memberId}/authorize", async Task<IResult> (
             string networkId,

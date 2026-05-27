@@ -11,26 +11,12 @@ public sealed class MemberService(HomeMeshDbContext db, IEnumerable<ISdwanContro
 {
     public async Task<IReadOnlyList<MemberDto>> ListAsync(string networkId, CancellationToken cancellationToken = default)
     {
-        return await db.NetworkMembers
+        var members = await db.NetworkMembers
             .Where(x => x.NetworkId == networkId)
             .OrderBy(x => x.Name ?? x.ProviderMemberId)
-            .Select(x => new MemberDto(
-                x.Id,
-                x.NetworkId,
-                x.DeviceId,
-                x.Provider,
-                x.ProviderMemberId,
-                x.Name,
-                x.Role,
-                x.Authorized,
-                x.ActiveBridge,
-                x.Online,
-                x.IpAssignmentsJson,
-                x.TagsJson,
-                x.LastSeenAt,
-                x.CreatedAt,
-                x.UpdatedAt))
             .ToListAsync(cancellationToken);
+
+        return members.Select(ToDto).ToList();
     }
 
     public async Task<MemberDto?> GetAsync(string networkId, string memberId, CancellationToken cancellationToken = default)
@@ -94,6 +80,7 @@ public sealed class MemberService(HomeMeshDbContext db, IEnumerable<ISdwanContro
                 NetworkId = networkId,
                 Provider = binding.Provider,
                 ProviderMemberId = providerMemberId,
+                Role = MemberProviderState.NormalizeRole(null),
                 CreatedAt = now
             };
             db.NetworkMembers.Add(member);
@@ -152,17 +139,23 @@ public sealed class MemberService(HomeMeshDbContext db, IEnumerable<ISdwanContro
                 NetworkId = networkId,
                 Provider = provider,
                 ProviderMemberId = memberInfo.ProviderMemberId,
+                Role = MemberProviderState.NormalizeRole(null),
                 CreatedAt = now
             };
             db.NetworkMembers.Add(member);
         }
 
-        member.Name = memberInfo.Name;
+        member.Name = string.IsNullOrWhiteSpace(memberInfo.Name)
+            ? member.Name ?? member.ProviderMemberId
+            : memberInfo.Name.Trim();
+        member.Role = MemberProviderState.NormalizeRole(member.Role);
         member.Authorized = memberInfo.Authorized;
         member.ActiveBridge = memberInfo.ActiveBridge;
         member.Online = memberInfo.Online;
         member.IpAssignmentsJson = JsonSerializer.Serialize(memberInfo.IpAssignments);
-        member.ProviderRawJson = memberInfo.RawJson;
+        member.ProviderRawJson = MemberProviderState.Update(
+            member.ProviderRawJson,
+            providerRawJson: memberInfo.RawJson);
         member.LastSeenAt = memberInfo.Online ? now : member.LastSeenAt;
         member.UpdatedAt = now;
 
@@ -177,6 +170,9 @@ public sealed class MemberService(HomeMeshDbContext db, IEnumerable<ISdwanContro
         {
             throw new InvalidOperationException("Member not found.");
         }
+
+        var network = await db.Networks.FirstOrDefaultAsync(x => x.Id == networkId, cancellationToken)
+            ?? throw new InvalidOperationException("Network not found.");
 
         var binding = await db.NetworkProviderBindings.FirstOrDefaultAsync(
             x => x.NetworkId == networkId && x.Provider == member.Provider,
@@ -198,11 +194,19 @@ public sealed class MemberService(HomeMeshDbContext db, IEnumerable<ISdwanContro
 
         var now = DateTimeOffset.UtcNow;
         if (request.Name is not null) member.Name = request.Name.Trim();
-        if (request.Role is not null) member.Role = request.Role.Trim();
+        if (request.Role is not null) member.Role = MemberProviderState.NormalizeRole(request.Role);
         if (request.Authorized.HasValue) member.Authorized = request.Authorized.Value;
         if (request.ActiveBridge.HasValue) member.ActiveBridge = request.ActiveBridge.Value;
         if (request.IpAssignments is not null) member.IpAssignmentsJson = JsonSerializer.Serialize(request.IpAssignments);
         if (request.Tags is not null) member.TagsJson = JsonSerializer.Serialize(request.Tags);
+        if (request.Authorized.HasValue)
+        {
+            member.ProviderRawJson = MemberProviderState.Update(
+                member.ProviderRawJson,
+                manualAuthorizationBlocked: network.AutoApproveMembers && !request.Authorized.Value);
+        }
+
+        member.Role = MemberProviderState.NormalizeRole(member.Role);
         member.UpdatedAt = now;
 
         db.AuditLogs.Add(new AuditLog
@@ -251,7 +255,7 @@ public sealed class MemberService(HomeMeshDbContext db, IEnumerable<ISdwanContro
         x.Provider,
         x.ProviderMemberId,
         x.Name,
-        x.Role,
+        MemberProviderState.NormalizeRole(x.Role),
         x.Authorized,
         x.ActiveBridge,
         x.Online,

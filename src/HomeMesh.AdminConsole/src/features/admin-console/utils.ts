@@ -33,6 +33,15 @@ export function parseCsv(value: string) {
     .filter(Boolean);
 }
 
+export function normalizeMemberRole(role?: string | null, fallback = 'Device') {
+  const normalized = role?.trim();
+  if (!normalized) {
+    return fallback;
+  }
+
+  return ['unknown', 'unknow'].includes(normalized.toLowerCase()) ? fallback : normalized;
+}
+
 export function formatTime(value?: string | null, mode: 'full' | 'time' = 'full') {
   if (!value) {
     return 'N/A';
