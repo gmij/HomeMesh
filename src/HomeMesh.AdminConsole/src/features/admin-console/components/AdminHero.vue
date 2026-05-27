@@ -6,7 +6,7 @@
           <span></span>
           <span></span>
         </div>
-        <div>
+        <div class="hero-brand-copy">
           <div class="hero-title">{{ $t('hero.title') }}</div>
           <div class="hero-subtitle">{{ $t('hero.subtitle') }}</div>
         </div>

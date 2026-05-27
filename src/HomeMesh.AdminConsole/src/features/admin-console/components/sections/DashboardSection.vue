@@ -29,9 +29,13 @@
               <component :is="metric.icon" />
             </div>
             <div class="stat-copy">
-              <div class="stat-label">{{ metric.label }}</div>
-              <div class="stat-value">{{ metric.value }}</div>
-              <div class="stat-meta">{{ metric.meta }}</div>
+              <div class="stat-head">
+                <div class="stat-text">
+                  <div class="stat-label">{{ metric.label }}</div>
+                  <div class="stat-meta">{{ metric.meta }}</div>
+                </div>
+                <div class="stat-value">{{ metric.value }}</div>
+              </div>
             </div>
           </article>
         </div>
@@ -68,7 +72,7 @@
                     <td>{{ providerForNetwork(network.id) }}</td>
                     <td>{{ network.cidr ?? $t('network.auto_assigned') }}</td>
                     <td>
-                      <a-tag :color="statusColor(network.status)">{{ network.status }}</a-tag>
+                      <a-tag :color="statusColor(network.status)">{{ localizedStatus(network.status) }}</a-tag>
                     </td>
                   </tr>
                 </tbody>
@@ -102,6 +106,7 @@
 
 <script setup lang="ts">
 import { h } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { BellOutlined, PlusOutlined } from '@ant-design/icons-vue';
 import { Empty } from 'ant-design-vue';
 
@@ -112,6 +117,7 @@ import { formatTime, statusColor } from '../../utils';
 import WorkspaceRail from '../WorkspaceRail.vue';
 
 const simpleEmptyImage = Empty.PRESENTED_IMAGE_SIMPLE;
+const { t, te } = useI18n();
 
 const props = defineProps<{
   sectionId: string;
@@ -132,5 +138,10 @@ const emit = defineEmits<{
 
 function providerForNetwork(networkId: string) {
   return props.providerNames[networkId] ?? '-';
+}
+
+function localizedStatus(status: string) {
+  const key = `network.status_values.${status.toLowerCase()}`;
+  return te(key) ? t(key) : status;
 }
 </script>

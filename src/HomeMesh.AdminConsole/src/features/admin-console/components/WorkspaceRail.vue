@@ -5,7 +5,7 @@
         <span></span>
         <span></span>
       </div>
-      <div>
+      <div class="workspace-brand-copy">
         <strong>HomeMesh</strong>
         <small>{{ $t('hero.subtitle') }}</small>
       </div>
