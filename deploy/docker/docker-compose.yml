@@ -14,23 +14,25 @@ services:
     restart: unless-stopped
     ports:
       - "${HOMEMESH_HTTP_PORT:-8081}:8080"
-      - "${ZT_HOST_PORT:-19993}:9993/udp"
-      - "${ZT_HOST_PORT:-19993}:9993"
+      - "${ZT_HOST_PORT:-${ZT_PORT:-19993}}:${ZT_PORT:-19993}/udp"
+      - "${ZT_HOST_PORT:-${ZT_PORT:-19993}}:${ZT_PORT:-19993}"
     environment:
       TZ: ${TZ:-Asia/Shanghai}
       ASPNETCORE_URLS: http://+:8080
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
       ConnectionStrings__HomeMesh: ${ConnectionStrings__HomeMesh:-Data Source=/app/data/homemesh.db}
       Providers__ZeroTier__Enabled: ${Providers__ZeroTier__Enabled:-true}
-      Providers__ZeroTier__Port: ${Providers__ZeroTier__Port:-9993}
+      Providers__ZeroTier__Port: ${Providers__ZeroTier__Port:-${ZT_PORT:-19993}}
       Providers__ZeroTier__AuthTokenPath: ${Providers__ZeroTier__AuthTokenPath:-/var/lib/zerotier-one/authtoken.secret}
+      # Set this when running behind a reverse proxy/CDN so generated public download URLs use the external origin.
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-}
       # Use loopback by default so local compose can start even without public IP detection.
       # Override IP_ADDR4/IP_ADDR6 with reachable addresses when testing real client joins.
       IP_ADDR4: ${IP_ADDR4:-}
       IP_ADDR6: ${IP_ADDR6:-}
-      ZT_PORT: ${ZT_PORT:-9993}
-      # Keep this aligned with ZT_HOST_PORT when exposing a different host port.
-      ZT_PUBLIC_PORT: ${ZT_PUBLIC_PORT:-19993}
+      ZT_PORT: ${ZT_PORT:-19993}
+      # Defaults to the published ZeroTier host port so the generated planet advertises the reachable endpoint.
+      ZT_PUBLIC_PORT: ${ZT_PUBLIC_PORT:-${ZT_HOST_PORT:-${ZT_PORT:-19993}}}
     volumes:
       - homemesh-data:/app/data
       - homemesh-zerotier:/var/lib/zerotier-one

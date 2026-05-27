@@ -5,6 +5,7 @@ using HomeMesh.Application.Diagnostics;
 using HomeMesh.Application.Networks;
 using HomeMesh.Application.Setup;
 using HomeMesh.Infrastructure.Persistence;
+using HomeMesh.WebApi;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -170,7 +171,7 @@ public static class NetworkEndpoints
             var planetToken = CreateDownloadToken(networkId, DownloadKindPlanet, expiresAt, secret);
             var moonToken = CreateDownloadToken(networkId, DownloadKindMoon, expiresAt, secret);
 
-            var baseUrl = $"{httpContext.Request.Scheme}://{httpContext.Request.Host}";
+            var baseUrl = PublicBaseUrlResolver.Resolve(httpContext.Request, configuration);
             var planetUrl = $"{baseUrl}/api/public/download/planet?token={Uri.EscapeDataString(planetToken)}";
             var moonUrl = $"{baseUrl}/api/public/download/moon?token={Uri.EscapeDataString(moonToken)}";
 

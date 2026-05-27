@@ -68,9 +68,15 @@ check_zerotier() {
     mkdir -p "${ZEROTIER_PATH}" "${APP_DATA_PATH}" "${ARTIFACTS_PATH}"
 
     if [ -f "${ZT_PORT_FILE}" ]; then
+        CURRENT_PORT="$(cat "${ZT_PORT_FILE}")"
         CURRENT_PUBLIC_PORT=""
         if [ -f "${ZT_PUBLIC_PORT_FILE}" ]; then
             CURRENT_PUBLIC_PORT="$(cat "${ZT_PUBLIC_PORT_FILE}")"
+        fi
+
+        if [ "${CURRENT_PORT}" != "${ZT_PORT}" ]; then
+            echo "ZT_PORT changed from ${CURRENT_PORT} to ${ZT_PORT}, updating ZeroTier listen port..."
+            echo "${ZT_PORT}" > "${ZT_PORT_FILE}"
         fi
 
         if [ "${CURRENT_PUBLIC_PORT}" != "${ZT_PUBLIC_PORT}" ]; then

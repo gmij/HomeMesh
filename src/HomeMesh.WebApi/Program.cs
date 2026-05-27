@@ -6,6 +6,7 @@ using HomeMesh.Infrastructure.Persistence;
 using HomeMesh.Protocol.ZeroTier;
 using HomeMesh.WebApi.Endpoints;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.HttpOverrides;
 using Serilog;
 
 const string MissingAdminConsoleHtml = """
@@ -48,6 +49,14 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddHomeMeshInfrastructure(builder.Configuration);
 builder.Services.AddZeroTierProvider(builder.Configuration);
 builder.Services.AddHomeMeshApplication();
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor
+        | ForwardedHeaders.XForwardedHost
+        | ForwardedHeaders.XForwardedProto;
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 
 var app = builder.Build();
 
@@ -83,6 +92,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseForwardedHeaders();
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
