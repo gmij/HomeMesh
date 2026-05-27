@@ -623,8 +623,8 @@ function createAdminConsoleState() {
     deleteLoading.value = true;
     try {
       const networkName = selectedNetwork.value.name;
-      await request(`/api/networks/${selectedNetworkId.value}`, {
-        method: 'DELETE'
+      await request(`/api/networks/${selectedNetworkId.value}/delete`, {
+        method: 'POST'
       });
 
       await refreshAll();
@@ -763,7 +763,7 @@ function createAdminConsoleState() {
       return;
     }
     try {
-      await request(`/api/networks/${selectedNetworkId.value}/routes/${routeId}`, { method: 'DELETE' });
+      await request(`/api/networks/${selectedNetworkId.value}/routes/${routeId}/delete`, { method: 'POST' });
       await loadSelectedNetwork(selectedNetworkId.value);
       await loadAudits();
       message.success(t('notifications.success_route_deleted'));
@@ -777,8 +777,19 @@ function createAdminConsoleState() {
       message.warning(t('notifications.warn_select_network_first'));
       return;
     }
-    if (!poolForm.ipRangeStart.trim() || !poolForm.ipRangeEnd.trim()) {
+    const ipRangeStart = poolForm.ipRangeStart.trim();
+    const ipRangeEnd = poolForm.ipRangeEnd.trim();
+
+    if (!ipRangeStart || !ipRangeEnd) {
       message.warning(t('notifications.warn_enter_pool_range'));
+      return;
+    }
+
+    const duplicateExists = pools.value.some(
+      (pool) => pool.ipRangeStart === ipRangeStart && pool.ipRangeEnd === ipRangeEnd
+    );
+    if (duplicateExists) {
+      message.warning(t('notifications.warn_duplicate_pool_range'));
       return;
     }
 
@@ -786,12 +797,14 @@ function createAdminConsoleState() {
       await request(`/api/networks/${selectedNetworkId.value}/ip-pools`, {
         method: 'POST',
         body: JSON.stringify({
-          ipRangeStart: poolForm.ipRangeStart.trim(),
-          ipRangeEnd: poolForm.ipRangeEnd.trim(),
+          ipRangeStart,
+          ipRangeEnd,
           providerManaged: poolForm.providerManaged
         })
       });
 
+      poolForm.ipRangeStart = '';
+      poolForm.ipRangeEnd = '';
       await loadSelectedNetwork(selectedNetworkId.value);
       await loadAudits();
       message.success(t('notifications.success_pool_added'));
@@ -805,7 +818,7 @@ function createAdminConsoleState() {
       return;
     }
     try {
-      await request(`/api/networks/${selectedNetworkId.value}/ip-pools/${poolId}`, { method: 'DELETE' });
+      await request(`/api/networks/${selectedNetworkId.value}/ip-pools/${poolId}/delete`, { method: 'POST' });
       await loadSelectedNetwork(selectedNetworkId.value);
       await loadAudits();
       message.success(t('notifications.success_pool_deleted'));

@@ -9,6 +9,36 @@ public static class NetworkConfigEndpoints
 {
     public static IEndpointRouteBuilder MapNetworkConfigEndpoints(this IEndpointRouteBuilder app)
     {
+        static async Task<IResult> DeleteRouteAsync(
+            string networkId,
+            string routeId,
+            RouteService routeService,
+            CancellationToken cancellationToken)
+        {
+            var deleted = await routeService.DeleteAsync(networkId, routeId, cancellationToken);
+            if (!deleted)
+            {
+                return Results.NotFound(new { error = "Route not found." });
+            }
+
+            return Results.NoContent();
+        }
+
+        static async Task<IResult> DeleteIpPoolAsync(
+            string networkId,
+            string poolId,
+            IpPoolService ipPoolService,
+            CancellationToken cancellationToken)
+        {
+            var deleted = await ipPoolService.DeleteAsync(networkId, poolId, cancellationToken);
+            if (!deleted)
+            {
+                return Results.NotFound(new { error = "IP pool not found." });
+            }
+
+            return Results.NoContent();
+        }
+
         app.MapPost("/api/networks/{networkId}/easy-setup", async Task<IResult> (
             string networkId,
             EasySetupRequest request,
@@ -73,20 +103,8 @@ public static class NetworkConfigEndpoints
             }
         });
 
-        app.MapDelete("/api/networks/{networkId}/routes/{routeId}", async Task<IResult> (
-            string networkId,
-            string routeId,
-            RouteService routeService,
-            CancellationToken cancellationToken) =>
-        {
-            var deleted = await routeService.DeleteAsync(networkId, routeId, cancellationToken);
-            if (!deleted)
-            {
-                return Results.NotFound(new { error = "Route not found." });
-            }
-
-            return Results.NoContent();
-        });
+        app.MapDelete("/api/networks/{networkId}/routes/{routeId}", DeleteRouteAsync);
+        app.MapPost("/api/networks/{networkId}/routes/{routeId}/delete", DeleteRouteAsync);
 
         app.MapGet("/api/networks/{networkId}/ip-pools", async Task<IResult> (
             string networkId,
@@ -113,20 +131,8 @@ public static class NetworkConfigEndpoints
             }
         });
 
-        app.MapDelete("/api/networks/{networkId}/ip-pools/{poolId}", async Task<IResult> (
-            string networkId,
-            string poolId,
-            IpPoolService ipPoolService,
-            CancellationToken cancellationToken) =>
-        {
-            var deleted = await ipPoolService.DeleteAsync(networkId, poolId, cancellationToken);
-            if (!deleted)
-            {
-                return Results.NotFound(new { error = "IP pool not found." });
-            }
-
-            return Results.NoContent();
-        });
+        app.MapDelete("/api/networks/{networkId}/ip-pools/{poolId}", DeleteIpPoolAsync);
+        app.MapPost("/api/networks/{networkId}/ip-pools/{poolId}/delete", DeleteIpPoolAsync);
 
         app.MapGet("/api/networks/{networkId}/dns", async Task<IResult> (
             string networkId,

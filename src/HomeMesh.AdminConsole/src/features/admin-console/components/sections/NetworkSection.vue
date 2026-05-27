@@ -1,6 +1,6 @@
 <template>
   <section :id="sectionId" class="prototype-section">
-    <div class="section-heading">
+    <div v-if="!hideSectionHeading" class="section-heading">
       <div class="heading-badge">2</div>
       <div class="heading-copy">
         <h2>{{ $t('network.title') }}</h2>
@@ -253,11 +253,13 @@
                 </div>
                 <div v-if="routes.length" class="stack-list">
                   <div v-for="route in routes" :key="route.id" class="stack-item">
-                    <div>
+                    <div class="stack-item__content">
                       <strong>{{ route.target }}</strong>
                       <span>{{ route.type }} / {{ route.via || $t('network.provider_managed') }}</span>
                     </div>
-                    <a-button size="small" danger @click="emit('delete-route', route.id)">{{ $t('network.delete') }}</a-button>
+                    <a-button size="small" danger :icon="h(DeleteOutlined)" @click="emit('delete-route', route.id)">
+                      {{ $t('network.delete') }}
+                    </a-button>
                   </div>
                 </div>
                 <a-empty v-else :image="simpleEmptyImage" :description="$t('network.no_routes')" />
@@ -283,11 +285,12 @@
                 </div>
                 <div v-if="pools.length" class="stack-list">
                   <div v-for="pool in pools" :key="pool.id" class="stack-item">
-                    <div>
+                    <div class="stack-item__content">
                       <strong>{{ pool.ipRangeStart }} - {{ pool.ipRangeEnd }}</strong>
-                      <span>{{ pool.providerManaged ? $t('network.provider_managed') : $t('network.local_managed') }}</span>
                     </div>
-                    <a-button size="small" danger @click="emit('delete-pool', pool.id)">{{ $t('network.delete') }}</a-button>
+                    <a-button size="small" danger :icon="h(DeleteOutlined)" @click="emit('delete-pool', pool.id)">
+                      {{ $t('network.delete') }}
+                    </a-button>
                   </div>
                 </div>
                 <a-empty v-else :image="simpleEmptyImage" :description="$t('network.no_ip_pools')" />
@@ -380,7 +383,7 @@
 
 <script setup lang="ts">
 import { h } from 'vue';
-import { ApiOutlined, DeploymentUnitOutlined, ReloadOutlined } from '@ant-design/icons-vue';
+import { ApiOutlined, DeleteOutlined, DeploymentUnitOutlined, ReloadOutlined } from '@ant-design/icons-vue';
 import { Empty } from 'ant-design-vue';
 
 import type {
@@ -435,6 +438,7 @@ defineProps<{
   memberIpValues: Record<string, string>;
   memberTagValues: Record<string, string>;
   showRail?: boolean;
+  hideSectionHeading?: boolean;
 }>();
 
 const emit = defineEmits<{

@@ -21,6 +21,20 @@ public static class NetworkEndpoints
 
     public static IEndpointRouteBuilder MapNetworkEndpoints(this IEndpointRouteBuilder app)
     {
+        static async Task<IResult> DeleteNetworkAsync(
+            string networkId,
+            NetworkService networkService,
+            CancellationToken cancellationToken)
+        {
+            var deleted = await networkService.DeleteAsync(networkId, cancellationToken);
+            if (!deleted)
+            {
+                return Results.NotFound(new { error = "Network not found." });
+            }
+
+            return Results.NoContent();
+        }
+
         app.MapGet("/api/auth/status", async Task<IResult> (SetupService setupService, AuthService authService, HttpContext httpContext, CancellationToken cancellationToken) =>
         {
             var initialized = await setupService.IsInitializedAsync(cancellationToken);
@@ -297,16 +311,8 @@ public static class NetworkEndpoints
                 moonFileName);
         });
 
-        app.MapDelete("/api/networks/{networkId}", async Task<IResult> (string networkId, NetworkService networkService, CancellationToken cancellationToken) =>
-        {
-            var deleted = await networkService.DeleteAsync(networkId, cancellationToken);
-            if (!deleted)
-            {
-                return Results.NotFound(new { error = "Network not found." });
-            }
-
-            return Results.NoContent();
-        });
+        app.MapDelete("/api/networks/{networkId}", DeleteNetworkAsync);
+        app.MapPost("/api/networks/{networkId}/delete", DeleteNetworkAsync);
 
         return app;
     }

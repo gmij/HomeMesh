@@ -29,13 +29,26 @@ public sealed class IpPoolService(HomeMeshDbContext db)
             throw new InvalidOperationException("IP range start and end are required.");
         }
 
+        var ipRangeStart = request.IpRangeStart.Trim();
+        var ipRangeEnd = request.IpRangeEnd.Trim();
+
+        var duplicateExists = await db.IpPools.AnyAsync(
+            x => x.NetworkId == networkId
+                && x.IpRangeStart == ipRangeStart
+                && x.IpRangeEnd == ipRangeEnd,
+            cancellationToken);
+        if (duplicateExists)
+        {
+            throw new InvalidOperationException("IP pool already exists.");
+        }
+
         var now = DateTimeOffset.UtcNow;
         var pool = new IpPool
         {
             Id = IdGenerator.NewId("ippool"),
             NetworkId = networkId,
-            IpRangeStart = request.IpRangeStart.Trim(),
-            IpRangeEnd = request.IpRangeEnd.Trim(),
+            IpRangeStart = ipRangeStart,
+            IpRangeEnd = ipRangeEnd,
             ProviderManaged = request.ProviderManaged,
             CreatedAt = now,
             UpdatedAt = now

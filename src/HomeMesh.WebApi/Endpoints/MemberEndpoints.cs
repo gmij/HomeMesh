@@ -89,8 +89,6 @@ public static class MemberEndpoints
             return Results.Ok(member);
         });
 
-        app.MapPatch("/api/networks/{networkId}/members/{memberId}", UpdateMember);
-
         app.MapPost("/api/networks/{networkId}/members/{memberId}", UpdateMember);
 
         app.MapPost("/api/networks/{networkId}/members/{memberId}/authorize", async Task<IResult> (

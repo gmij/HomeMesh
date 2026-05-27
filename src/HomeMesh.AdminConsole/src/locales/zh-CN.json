@@ -356,6 +356,7 @@
     "success_route_added": "路由已添加。",
     "success_route_deleted": "路由已删除。",
     "warn_enter_pool_range": "请输入完整的起始和结束 IP 地址。",
+    "warn_duplicate_pool_range": "相同的 IP 地址池范围已存在。",
     "success_pool_added": "IP 地址池已添加。",
     "success_pool_deleted": "IP 地址池已删除。",
     "success_dns_saved": "DNS 配置已保存。",

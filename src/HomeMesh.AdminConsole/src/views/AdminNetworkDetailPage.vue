@@ -3,6 +3,7 @@
     :section-id="`section-${prototypeSections.network}`"
     :nav-items="prototypeNavItems"
     :show-rail="false"
+    :hide-section-heading="true"
     :selected-network-id="selectedNetworkId"
     :network-options="networkSelectOptions"
     :selected-network="selectedNetwork"

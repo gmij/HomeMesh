@@ -1,20 +1,5 @@
 <template>
   <header class="page-hero">
-    <div class="page-hero-main">
-      <div class="hero-brand">
-        <div class="hero-mark">
-          <span></span>
-          <span></span>
-        </div>
-        <div class="hero-brand-copy">
-          <div class="hero-title">{{ $t('hero.title') }}</div>
-          <div class="hero-subtitle">{{ $t('hero.subtitle') }}</div>
-        </div>
-      </div>
-
-      <div class="hero-tagline">{{ $t('hero.tagline') }}</div>
-    </div>
-
     <div class="hero-actions">
       <div class="hero-toolbar">
         <a-button :icon="h(ReloadOutlined)" :loading="refreshing" @click="emit('refresh')">

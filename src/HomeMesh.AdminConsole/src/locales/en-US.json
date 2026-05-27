@@ -359,6 +359,7 @@
     "success_route_added": "Route added.",
     "success_route_deleted": "Route deleted.",
     "warn_enter_pool_range": "Please enter both start and end IP addresses.",
+    "warn_duplicate_pool_range": "This IP pool range already exists.",
     "success_pool_added": "IP pool added.",
     "success_pool_deleted": "IP pool deleted.",
     "success_dns_saved": "DNS saved.",
