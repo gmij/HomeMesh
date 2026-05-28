@@ -61,7 +61,7 @@ public sealed class WebApiSmokeTests : IClassFixture<WebApplicationFactory<HomeM
 
         var payload = await response.Content.ReadFromJsonAsync<ErrorResponse>();
         Assert.Equal("Invalid username or password.", payload?.Error);
-        Assert.Equal("InvalidOperationException: Invalid username or password.", payload?.Detail);
+        Assert.Null(payload?.Detail);
     }
 
     [Fact]
@@ -76,5 +76,5 @@ public sealed class WebApiSmokeTests : IClassFixture<WebApplicationFactory<HomeM
     }
 
     private sealed record HealthResponse(string Status, string Service, DateTimeOffset CheckedAt);
-    private sealed record ErrorResponse(string Error, string Detail);
+    private sealed record ErrorResponse(string Error, string? Detail);
 }

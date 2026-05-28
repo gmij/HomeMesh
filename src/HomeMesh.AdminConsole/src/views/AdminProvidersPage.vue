@@ -74,7 +74,6 @@
         >
           <strong>{{ localizeStatus(testResult.status) }}</strong>
           <span>{{ localizeZeroTierMessage(testResult.message) }}</span>
-          <small v-if="testResult.detail">{{ testResult.detail }}</small>
         </div>
 
         <div
@@ -163,10 +162,10 @@ async function testCurrentConfig() {
       testResult.value = result;
     }
   } catch (error) {
+    logClientError('Failed to test ZeroTier provider configuration.', error);
     const failedResult = {
       status: 'Error',
-      message: t('providers.config_modal.test_failed'),
-      detail: error instanceof Error ? error.message : String(error)
+      message: t('providers.config_modal.test_failed')
     };
     applyTestResultToStatus(failedResult);
     testResult.value = failedResult;
@@ -193,7 +192,7 @@ async function saveCurrentConfig() {
       : t('providers.config_modal.saved_message');
   } catch (error) {
     logClientError('Failed to save ZeroTier provider configuration.', error);
-    message.error(error instanceof Error ? error.message : t('providers.config_modal.save_failed'));
+    message.error(t('providers.config_modal.save_failed'));
   } finally {
     savingConfig.value = false;
   }

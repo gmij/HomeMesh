@@ -58,18 +58,24 @@ export async function requestMaybe<T>(path: string): Promise<T | null> {
 
 async function readError(response: Response): Promise<string> {
   const text = await response.text();
+  const fallbackMessage = `Request failed with status ${response.status}.`;
 
   if (!text) {
-    return `Request failed with status ${response.status}.`;
+    return fallbackMessage;
   }
 
   try {
     const payload = JSON.parse(text) as { error?: string; message?: string; detail?: string };
     const primary = payload.error ?? payload.message;
-    const secondary = payload.detail && payload.detail !== '{}' ? payload.detail : undefined;
-    return [primary, secondary].filter(Boolean).join(' — ') || text;
+
+    if (payload.detail && payload.detail !== '{}') {
+      logClientError('Server returned hidden error detail.', payload.detail);
+    }
+
+    return primary || fallbackMessage;
   } catch (error) {
     logClientError('Failed to parse API error payload.', error);
-    return text;
+    logClientError('Received non-JSON error response body.', text);
+    return fallbackMessage;
   }
 }

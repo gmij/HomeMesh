@@ -43,7 +43,6 @@ import type {
   SummaryMetric
 } from '../types';
 import {
-  friendlyError,
   formatTime,
   isHealthyStatus,
   parseCsv,
@@ -1005,7 +1004,8 @@ function createAdminConsoleState() {
   }
 
   function handleError(error: unknown, fallback: string) {
-    message.error(`${fallback}: ${friendlyError(error)}`);
+    logClientError(fallback, error);
+    message.error(fallback);
   }
 
   return {

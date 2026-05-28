@@ -5,7 +5,6 @@ using HomeMesh.Application.Diagnostics;
 using HomeMesh.Application.Networks;
 using HomeMesh.Application.Setup;
 using HomeMesh.Infrastructure.Persistence;
-using HomeMesh.WebApi;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -74,8 +73,7 @@ public static class NetworkEndpoints
 
                 return Results.Json(new
                 {
-                    error = ex.Message,
-                    detail = ExceptionMetadataSerializer.Summarize(ex)
+                    error = ex.Message
                 }, statusCode: StatusCodes.Status401Unauthorized);
             }
         });
@@ -147,8 +145,7 @@ public static class NetworkEndpoints
 
                 return Results.Json(new
                 {
-                    error = "Provider connection failed. Check that ZeroTier service is running and the auth token path is correct.",
-                    detail = ex.Message
+                    error = "Provider connection failed. Check that ZeroTier service is running and the auth token path is correct."
                 }, statusCode: StatusCodes.Status502BadGateway);
             }
         });

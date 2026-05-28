@@ -89,8 +89,7 @@ public static class ProviderEndpoints
 
                 return Results.Json(new
                 {
-                    error = "Failed to save provider configuration.",
-                    detail = ex.Message
+                    error = "Failed to save provider configuration."
                 }, statusCode: StatusCodes.Status500InternalServerError);
             }
 
@@ -132,10 +131,10 @@ public static class ProviderEndpoints
             var resolvedPath = Path.IsPathRooted(authTokenPath) ? authTokenPath : Path.GetFullPath(authTokenPath);
             if (!File.Exists(resolvedPath))
             {
+                logger.LogWarning("ZeroTier auth token file was not found at {ResolvedPath}.", resolvedPath);
                 return Results.BadRequest(new
                 {
-                    error = "ZeroTier auth token file was not found.",
-                    detail = resolvedPath
+                    error = "ZeroTier auth token file was not found."
                 });
             }
 
@@ -152,11 +151,16 @@ public static class ProviderEndpoints
 
                 if (!response.IsSuccessStatusCode)
                 {
+                    logger.LogWarning(
+                        "ZeroTier API test failed with status {StatusCode} {ReasonPhrase}. Response: {ResponseText}",
+                        (int)response.StatusCode,
+                        response.ReasonPhrase,
+                        responseText);
+
                     return Results.Json(new
                     {
                         status = "Error",
                         message = $"ZeroTier API responded with {(int)response.StatusCode} {response.ReasonPhrase}.",
-                        detail = responseText,
                         checkedAt = DateTimeOffset.UtcNow,
                         config = new ZeroTierConfigDto(enabled, port, authTokenPath)
                     }, statusCode: StatusCodes.Status502BadGateway);
@@ -192,7 +196,6 @@ public static class ProviderEndpoints
                 {
                     status = "Error",
                     message = "Failed to connect to ZeroTier local API.",
-                    detail = ex.Message,
                     checkedAt = DateTimeOffset.UtcNow,
                     config = new ZeroTierConfigDto(enabled, port, authTokenPath)
                 }, statusCode: StatusCodes.Status502BadGateway);
